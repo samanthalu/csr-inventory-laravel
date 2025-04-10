@@ -25,4 +25,9 @@ class Borrower extends Model
     public function products() {
         return $this->hasMany(Product::class, 'prod_id');
     }
+
+    public function staff()
+    {
+        return $this->belongsTo(Staff::class, 'staff_id');
+    }
 }

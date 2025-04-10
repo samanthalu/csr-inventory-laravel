@@ -22,7 +22,7 @@ return new class  extends Migration
             $table->engine = 'InnoDB';
             $table->increments('pa_id');
             $table->unsignedInteger('pa_prod_id'); // INT UNSIGNED
-            $table->foreign('pa_prod_id')->references('prod_id')->on('product')->onDelete('cascade');
+            $table->foreign('pa_prod_id')->references('prod_id')->on('products')->onDelete('cascade');
             $table->string('pa_name');
             $table->string('pa_serial_number');
             $table->string('pa_qty', 45)->nullable()->default(null);

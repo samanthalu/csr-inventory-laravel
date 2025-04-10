@@ -13,13 +13,14 @@ return new class extends Migration
     {
         Schema::create('borrowers', function (Blueprint $table) {
             $table->id('pb_id');
-            $table->string('pb_name');
+            $table->bigInteger('staff_id');
+            $table->foreign('staff_id')->references('staff_id')->on('staff')->onDelete('no action');
             $table->string('pb_purpose');
             $table->date('pb_date_from');
             $table->date('pb_date_to');
             $table->string('pb_with_accessories', 10)->default('no');
             $table->unsignedInteger('pb_prod_id');
-            $table->foreign('pb_prod_id')->references('prod_id')->on('product')->onDelete('no action');
+            $table->foreign('pb_prod_id')->references('prod_id')->on('products')->onDelete('no action');
             $table->timestamps();
         });
     }

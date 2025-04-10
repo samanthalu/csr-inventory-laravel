@@ -17,12 +17,12 @@ class AccessoriesController extends Controller
     // Store accessories and files
     public function store(Request $request)
     {
-        \Log::info($request);
+        // \Log::info($request);
         // Validate input
         $validator = Validator::make($request->all(), [
-            'product_id' => 'required|exists:product,prod_id',
+            'product_id' => 'required|exists:products,prod_id',
             'accessories' => 'array',
-            'accessories.*.pa_prod_id' => 'required|exists:product,prod_id',
+            'accessories.*.pa_prod_id' => 'required|exists:products,prod_id',
             'accessories.*.pa_name' => 'required|string|max:255',
             'accessories.*.pa_serial_number' => 'required|string|max:255|unique:product_accessories,pa_serial_number',
             'accessories.*.pa_qty' => 'required|integer|min:1',

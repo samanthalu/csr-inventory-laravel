@@ -4,7 +4,9 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\Product\AccessoriesController;
 use App\Http\Controllers\File\ProductFileController;
+use App\Http\Controllers\Product\CategoryController;
 use App\Http\Controllers\Product\SupplierController;
+use App\Http\Controllers\Software\SoftwareController;
 
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/products', [ProductController::class, 'getProducts']);
@@ -45,4 +47,15 @@ DELETE	/items/{id}	destroy() (Delete an item)
 // Suppliers
 Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('suppliers', SupplierController::class);
+});
+
+// Categories
+Route::middleware('auth:sanctum')->group(function () {
+    Route::apiResource('categories', CategoryController::class);
+});
+
+
+// Software
+Route::middleware('auth:sanctum')->group(function () {
+    Route::apiResource('softwares', SoftwareController::class);
 });

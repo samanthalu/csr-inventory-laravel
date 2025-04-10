@@ -17,8 +17,8 @@ return new class  extends Migration
     public function up()
     {
         Schema::disableForeignKeyConstraints();
-        Schema::dropIfExists('supplier');
-        Schema::create('supplier', function (Blueprint $table) {
+        Schema::dropIfExists('suppliers');
+        Schema::create('suppliers', function (Blueprint $table) {
             $table->engine = 'InnoDB';
             $table->increments('sup_id');
             $table->string('sup_name', 100);
@@ -43,6 +43,6 @@ return new class  extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('supplier');
+        Schema::dropIfExists('suppliers');
     }
 };

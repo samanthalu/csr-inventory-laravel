@@ -23,9 +23,9 @@ return new class  extends Migration
             $table->increments('cat_id');
             $table->string('cat_name', 45);
             $table->string('cat_desc')->nullable();
-            $table->string('cat_hireable')->nullable();
-            $table->string('cat_slug')->nullable();
-            $table->string('cat_status')->nullable();
+            // $table->string('cat_hireable')->nullable();
+            // $table->string('cat_slug')->nullable();
+            // $table->string('cat_status')->nullable();
             $table->timestamps();
         });
  Schema::enableForeignKeyConstraints();

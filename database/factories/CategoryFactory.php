@@ -20,9 +20,9 @@ class CategoryFactory extends Factory
         return [
             'cat_name' => ucfirst($name),
             'cat_desc' => $this->faker->sentence,
-            'cat_hireable' => $this->faker->boolean,
-            'cat_slug' => Str::slug($name),
-            'cat_status' => $this->faker->randomElement([0, 1]),
+            // 'cat_hireable' => $this->faker->boolean,
+            // 'cat_slug' => Str::slug($name),
+            // 'cat_status' => $this->faker->randomElement([0, 1]),
             'created_at' => now(),
             'updated_at' => now(),
         ];

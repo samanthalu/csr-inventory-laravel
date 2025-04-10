@@ -17,12 +17,12 @@ return new class  extends Migration
     public function up()
     {
         Schema::disableForeignKeyConstraints();
-        Schema::dropIfExists('product');
-        Schema::create('product', function (Blueprint $table) {
+        Schema::dropIfExists('products');
+        Schema::create('products', function (Blueprint $table) {
             $table->engine = 'InnoDB';
             $table->increments('prod_id');
             $table->string('prod_name', 100);
-            $table->string('prod_serial_num', 100);
+            $table->string('prod_serial_num', 100)->unique();
             $table->string('prod_model_number', 50)->nullable()->default(null);
             $table->string('prod_batch_number', 45)->nullable();
             $table->string('prod_desc')->nullable()->default(null);
@@ -37,7 +37,7 @@ return new class  extends Migration
             $table->foreign('cat_id')->references('cat_id')->on('category')->onDelete('restrict');
            
             $table->unsignedInteger('sup_id');
-            $table->foreign('sup_id')->references('sup_id')->on('supplier')->onDelete('restrict');
+            $table->foreign('sup_id')->references('sup_id')->on('suppliers')->onDelete('restrict');
            
             $table->integer('order_id')->nullable()->default(null);
             $table->date('prod_purchase_date')->nullable()->default(null);
@@ -60,6 +60,10 @@ return new class  extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('product');
+        Schema::table('products', function (Blueprint $table) {
+            $table->dropForeign(['user_id']); // Drop the foreign key
+        });
+
+        Schema::dropIfExists('products');
     }
 };

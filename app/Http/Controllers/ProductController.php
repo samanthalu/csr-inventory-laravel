@@ -31,7 +31,7 @@ class ProductController extends Controller
      */
     public function getProducts()
     {
-        
+        // sleep(5);
         if (!Gate::allows('read')) {
             return response()->json(['message' => 'You are not authorized for this activity'], 403);
         }
@@ -69,6 +69,7 @@ class ProductController extends Controller
      */
     public function getProductById($id)
     {
+        // sleep(3);
        
         if (!Gate::allows('read')) {
             return response()->json(['message' => 'You are not authorized for this activity'], 403);
@@ -153,7 +154,7 @@ class ProductController extends Controller
             // \Log::info($validated);
 
             $product = Product::create($validated);
-            $insertId = $product->id;
+            $insertId = $product->prod_id;
 
             return response()->json([
                 'success' => true,
@@ -201,7 +202,7 @@ class ProductController extends Controller
                 'prod_desc' => 'required|string',
                 'prod_cost' => 'required|numeric|min:0',
                 'prod_quantity' => 'required|integer|min:0',
-                'prod_serial_num' => 'string',
+                'prod_serial_num' => 'required|string|unique:product,prod_serial_num',
                 'prod_tag_number' => 'nullable|string',
                 'prod_model_number' => 'nullable|string',
                 'prod_batch_number' => 'nullable|string',

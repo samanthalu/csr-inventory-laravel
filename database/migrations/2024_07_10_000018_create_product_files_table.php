@@ -22,7 +22,7 @@ return new class  extends Migration
             $table->engine = 'InnoDB';
             $table->increments('pf_id');
             $table->unsignedInteger('pf_prod_id'); // INT UNSIGNED
-            $table->foreign('pf_prod_id')->references('prod_id')->on('product')->onDelete('cascade');
+            $table->foreign('pf_prod_id')->references('prod_id')->on('products')->onDelete('cascade');
             $table->string('pf_file_name')->nullable();
             $table->unsignedBigInteger('pf_file_size')->nullable();
             $table->string('pf_file_path')->nullable();
