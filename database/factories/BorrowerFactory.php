@@ -18,7 +18,7 @@ class BorrowerFactory extends Factory
     {
         return [
 
-            'pb_name' => $this->faker->name,
+            'staff_id' => $this->faker->numberBetween(1, 10),
             'pb_purpose' => $this->faker->sentence(3), // Purpose of borrowing
             'pb_date_from' => $this->faker->date(), // Start date of borrowing
             'pb_date_to' => $this->faker->date(), // Start date of borrowing

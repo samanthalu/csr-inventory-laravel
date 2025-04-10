@@ -7,6 +7,7 @@ use App\Http\Controllers\File\ProductFileController;
 use App\Http\Controllers\Product\CategoryController;
 use App\Http\Controllers\Product\SupplierController;
 use App\Http\Controllers\Software\SoftwareController;
+use App\Http\Controllers\Staff\StaffController;
 
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/products', [ProductController::class, 'getProducts']);
@@ -58,4 +59,9 @@ Route::middleware('auth:sanctum')->group(function () {
 // Software
 Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('softwares', SoftwareController::class);
+});
+
+// staff
+Route::middleware('auth:sanctum')->group(function () {
+    Route::apiResource('staff', StaffController::class);
 });

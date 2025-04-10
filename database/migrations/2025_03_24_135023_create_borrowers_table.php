@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('borrowers', function (Blueprint $table) {
             $table->id('pb_id');
-            $table->bigInteger('staff_id');
+            $table->unsignedBigInteger('staff_id');
             $table->foreign('staff_id')->references('staff_id')->on('staff')->onDelete('no action');
             $table->string('pb_purpose');
             $table->date('pb_date_from');
