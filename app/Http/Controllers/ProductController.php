@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Resources\ProductSelectResource;
 use App\Models\User;
 use App\Models\Product;
 use Illuminate\Http\Request;
@@ -287,5 +288,9 @@ class ProductController extends Controller
                 ]
             ], $statusCode);
         }
+    }
+
+    public function getSelectProducts(Request $request) {
+        return ProductSelectResource::collection(Product::all());
     }
 }

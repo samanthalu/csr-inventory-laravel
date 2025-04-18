@@ -1,4 +1,6 @@
 <?php
+
+use App\Http\Controllers\Borrower\BorrowerController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ProductController;
@@ -8,6 +10,7 @@ use App\Http\Controllers\Product\CategoryController;
 use App\Http\Controllers\Product\SupplierController;
 use App\Http\Controllers\Software\SoftwareController;
 use App\Http\Controllers\Staff\StaffController;
+use App\Http\Controllers\Staff\StaffProductController;
 
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/products', [ProductController::class, 'getProducts']);
@@ -15,6 +18,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::put('/products/edit-product', [ProductController::class, 'updateProduct']);
     Route::delete('/product/delete-product/{id}', [ProductController::class, 'deleteProduct']);
     Route::get('/product/{id}', [ProductController::class, 'getProductById']);
+    Route::get('/products/select-products', [ProductController::class, 'getSelectProducts']);
 });
 
 Route::prefix('accessories')->group(function () {
@@ -64,4 +68,15 @@ Route::middleware('auth:sanctum')->group(function () {
 // staff
 Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('staff', StaffController::class);
+});
+
+
+// staff and products
+Route::middleware('auth:sanctum')->group(function () {
+    Route::apiResource('staff_products', StaffProductController::class);
+});
+
+// track borrowers
+Route::middleware('auth:sanctum')->group(function () {
+    Route::apiResource('borrowers', BorrowerController::class);
 });

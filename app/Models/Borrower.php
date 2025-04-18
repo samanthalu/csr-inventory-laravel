@@ -18,16 +18,21 @@ class Borrower extends Model
         'pb_purpose',
         'pb_date_from',
         'pb_date_to',
-        'pb_prod_id', // Include any other fields you want to be mass-assignable
-        'pb_with_accessories'
+        'pb_status', // Include any other fields you want to be mass-assignable
+        'pb_with_accessories',
+        'staff_id', // Foreign key to staff table 
     ];
 
-    public function products() {
-        return $this->hasMany(Product::class, 'prod_id');
-    }
 
     public function staff()
     {
-        return $this->belongsTo(Staff::class, 'staff_id');
+        return $this->belongsTo(Staff::class, 'staff_id', 'staff_id');
     }
+
+
+    public function borrowedDevices()
+    {
+        return $this->hasMany(StaffProduct::class, 'sp_pb_id', 'pb_id');
+    }
+
 }

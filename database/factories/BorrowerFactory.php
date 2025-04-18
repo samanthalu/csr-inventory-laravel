@@ -23,7 +23,8 @@ class BorrowerFactory extends Factory
             'pb_date_from' => $this->faker->date(), // Start date of borrowing
             'pb_date_to' => $this->faker->date(), // Start date of borrowing
             'pb_with_accessories' => $this->faker->randomElement(['yes', 'no']), // Start date of borrowing
-            'pb_prod_id' => \App\Models\Product::pluck('prod_id')->random(), //
+            // 'pb_prod_id' => \App\Models\Product::pluck('prod_id')->random(), //
+            'pb_status' => $this->faker->randomElement(['returned', 'not-returned']),
         ];
     }
 }

@@ -22,7 +22,7 @@ class ProductFactory extends Factory
             'prod_cost' => $this->faker->randomFloat(2, 1, 1000), // Random cost, 2 decimal points, between 1 and 1000
             'prod_quantity' => $this->faker->numberBetween(1, 100), // Random quantity between 1 and 100
             'prod_serial_num' => $this->faker->unique()->bothify('??-#####'), // Random serial number
-            'prod_tag_number' => $this->faker->optional()->regexify('[A-Za-z]{10}'), // Optional tag number
+            'prod_tag_number' => $this->faker->regexify('[A-Za-z]{10}'), // Optional tag number
             'prod_model_number' => $this->faker->optional()->word, // Optional model number
             'prod_batch_number' => $this->faker->optional()->word, // Optional batch number
             'prod_other_identifier' => $this->faker->optional()->word, // Optional other identifier

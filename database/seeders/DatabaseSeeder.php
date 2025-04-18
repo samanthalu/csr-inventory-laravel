@@ -9,6 +9,7 @@ Use App\Models\Supplier;
 Use App\Models\Category;
 Use App\Models\Software;
 Use App\Models\Staff;
+Use App\Models\StaffProduct;
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
@@ -30,9 +31,9 @@ class DatabaseSeeder extends Seeder
         Supplier::factory(20)->create();
         Category::factory(10)->create();
         Product::factory(50)->create();
-        
         Software::factory()->count(10)->create();
         Staff::factory()->count(10)->create();
         Borrower::factory((40))->create();
+        StaffProduct::factory(50)->create();
     }
 }

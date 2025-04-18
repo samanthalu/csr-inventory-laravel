@@ -19,8 +19,7 @@ return new class extends Migration
             $table->date('pb_date_from');
             $table->date('pb_date_to');
             $table->string('pb_with_accessories', 10)->default('no');
-            $table->unsignedInteger('pb_prod_id');
-            $table->foreign('pb_prod_id')->references('prod_id')->on('products')->onDelete('no action');
+            $table->enum('pb_status', ['not-returned', 'returned'])->default('not-returned');
             $table->timestamps();
         });
     }
