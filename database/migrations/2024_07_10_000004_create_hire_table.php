@@ -1,45 +1,30 @@
-
 <?php
-        /**
-     *namespace Database\Migrations;
-     */
-
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class  extends Migration
+return new class extends Migration
 {
-        /**
-     * Run the migrations.
-     */
-    public function up()
+    public function up(): void
     {
-        Schema::disableForeignKeyConstraints();
-        Schema::dropIfExists('hire');
-        Schema::create('hire', function (Blueprint $table) {
-            $table->engine = 'InnoDB';
-            $table->increments('hr_id');
-            $table->string('hr_source');
-            $table->string('hr_item_category', 45);
-            $table->integer('hr_quantity')->nullable()->default(null);
-            $table->date('hr_date_from');
-            $table->integer('hr_duration');
-            $table->string('hr_request_status', 45)->default('0');
-            $table->integer('hr_request_created_by');
-            $table->integer('hr_request_approved_by')->nullable()->default(null);
-            $table->dateTime('hr_date_approved')->nullable()->default(null);
-            $table->dateTime('hr_request_create_date')->nullable()->default(null);
+        Schema::dropIfExists('hires');
+        Schema::create('hires', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('staff_id');
+            $table->date('hire_date');
+            $table->date('hire_return_date');
+            $table->enum('hire_status', ['active', 'returned', 'overdue'])->default('active');
+            $table->string('hire_purpose')->nullable();
+            $table->text('hire_notes')->nullable();
+            $table->timestamps();
+
+            $table->foreign('staff_id')->references('staff_id')->on('staff')->onDelete('cascade');
         });
- Schema::enableForeignKeyConstraints();
     }
 
-    /**
-     * Reverse the migrations.
-     */
-    public function down()
+    public function down(): void
     {
-        Schema::dropIfExists('hire');
+        Schema::dropIfExists('hires');
     }
 };

@@ -16,3 +16,4 @@ Route::middleware(['auth:sanctum'])->get('/user', function (Request $request) {
 
 include 'api/auth.php';
 include 'api/product.php';
+include 'api/hire.php';

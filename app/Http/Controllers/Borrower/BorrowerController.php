@@ -24,7 +24,10 @@ class BorrowerController extends Controller
         //
         // $borrowers = Borrower::with(['borrowedDevices.product'])->get();
         // return response()->json($borrowers);
-        $borrowers = Borrower::with(['staff', 'borrowedDevices.product'])->get()->map(function ($borrower) {
+        $borrowers = Borrower::with(['staff', 'borrowedDevices.product'])
+        ->orderBy('pb_date_from', 'desc') 
+        ->get()
+        ->map(function ($borrower) {
             return [
                 'borrower_id' => $borrower->pb_id,
                 'purpose' => $borrower->pb_purpose,
