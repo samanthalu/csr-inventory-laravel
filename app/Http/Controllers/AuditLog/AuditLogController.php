@@ -5,11 +5,15 @@ namespace App\Http\Controllers\AuditLog;
 use App\Http\Controllers\Controller;
 use App\Models\AuditLog;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 
 class AuditLogController extends Controller
 {
     public function index(Request $request)
     {
+        if (!Gate::allows('admin-only')) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
         $query = AuditLog::orderBy('created_at', 'desc');
 
         if ($request->query('module')) {
@@ -49,6 +53,9 @@ class AuditLogController extends Controller
 
     public function show($id)
     {
+        if (!Gate::allows('admin-only')) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
         $log = AuditLog::find($id);
         if (!$log) return response()->json(['message' => 'Log entry not found'], 404);
         return response()->json(['data' => $log]);

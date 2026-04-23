@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Product;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
@@ -17,8 +18,9 @@ class AccessoriesController extends Controller
     // Store accessories and files
     public function store(Request $request)
     {
-        // \Log::info($request);
-        // Validate input
+        if (!Gate::allows('admin-only')) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
         $validator = Validator::make($request->all(), [
             'product_id' => 'required|exists:products,prod_id',
             'accessories' => 'array',
@@ -82,6 +84,9 @@ class AccessoriesController extends Controller
     // Update accessory
     public function update(Request $request, $id)
     {
+        if (!Gate::allows('admin-only')) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
         $accessory = ProductAccessories::findOrFail($id);
 
         $validator = Validator::make($request->all(), [
@@ -104,6 +109,9 @@ class AccessoriesController extends Controller
     // Delete accessory and related files
     public function destroy($id)
     {
+        if (!Gate::allows('admin-only')) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
         DB::beginTransaction();
 
         try {
@@ -130,6 +138,9 @@ class AccessoriesController extends Controller
     // Get all accessories with files
     public function index($productId)
     {
+        if (!Gate::allows('read')) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
         $accessories = ProductAccessories::where('pa_prod_id', $productId)->get();
         $files = ProductFiles::where('pf_prod_id', $productId)->get();
 

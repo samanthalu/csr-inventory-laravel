@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Borrower;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Http\JsonResponse;
 use App\Models\StaffProduct;
 use App\Models\Staff;
@@ -21,7 +22,9 @@ class BorrowerController extends Controller
      */
     public function index()
     {
-        //
+        if (!Gate::allows('read')) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
         // $borrowers = Borrower::with(['borrowedDevices.product'])->get();
         // return response()->json($borrowers);
         $borrowers = Borrower::with(['staff', 'borrowedDevices.product'])
@@ -66,7 +69,9 @@ class BorrowerController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        if (!Gate::allows('admin-only')) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
         // \Log::info("message", $request->all());
         // Validate the request data
         $validated = $request->validate([

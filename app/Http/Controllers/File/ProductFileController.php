@@ -4,6 +4,7 @@ namespace App\Http\Controllers\File;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
@@ -21,6 +22,9 @@ class ProductFileController extends Controller {
     // Store new file
     public function store(Request $request, Product $product)
     {
+        if (!Gate::allows('admin-only')) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
         \Log::info('ReQ ' . $request);
         \Log::info('Product ' . $product);
    
@@ -49,6 +53,9 @@ class ProductFileController extends Controller {
     // Delete a file
     public function destroy($id)
     {
+        if (!Gate::allows('admin-only')) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
         $prodFile = ProductFiles::findOrFail($id);
         if($prodFile) {
             Storage::disk('public')->delete(

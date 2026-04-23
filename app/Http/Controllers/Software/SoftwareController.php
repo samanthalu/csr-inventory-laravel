@@ -6,17 +6,24 @@ use App\Models\Software;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Gate;
 
 class SoftwareController extends Controller
 {
     public function index(): JsonResponse
     {
+        if (!Gate::allows('read')) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
         $softwares = Software::all();
         return response()->json(['data' => $softwares], 200);
     }
 
     public function store(Request $request): JsonResponse
     {
+        if (!Gate::allows('admin-only')) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
         $validated = $request->validate([
             'soft_name' => 'required|string|max:255',
             'soft_version' => 'required|string|max:50',
@@ -36,12 +43,18 @@ class SoftwareController extends Controller
 
     public function show(Software $software): JsonResponse
     {
+        if (!Gate::allows('read')) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
         $software->load('supplier');
         return response()->json(['data' => $software], 200);
     }
 
     public function update(Request $request, Software $software): JsonResponse
     {
+        if (!Gate::allows('admin-only')) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
         $validated = $request->validate([
             'soft_name' => 'required|string|max:255',
             'soft_version' => 'required|string|max:50',
@@ -61,6 +74,9 @@ class SoftwareController extends Controller
 
     public function destroy(Software $software): JsonResponse
     {
+        if (!Gate::allows('admin-only')) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
         $software->delete();
         return response()->json(['message' => 'Software deleted successfully'], 204);
     }

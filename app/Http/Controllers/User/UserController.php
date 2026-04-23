@@ -17,8 +17,10 @@ class UserController extends Controller
 {
     //
     public function create(Request $request) {
-        // \Log::info($request);
-         
+        if (!Gate::allows('admin-only')) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
         $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
@@ -68,10 +70,16 @@ class UserController extends Controller
     }
 
     public function getUsers() {
+        if (!Gate::allows('admin-only')) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
         return User::all();
     }
 
     public function getUser(Request $request) {
+        if (!Gate::allows('admin-only')) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
         $request->validate([
             'id' => 'required|numeric'
         ]);
@@ -89,7 +97,9 @@ class UserController extends Controller
     }
 
     public function editUser(Request $request) {
-        // \Log::info($request);
+        if (!Gate::allows('admin-only')) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
         $message = '';
         $now = date("Y-m-d H:i:s");
 
@@ -177,7 +187,7 @@ class UserController extends Controller
 
         
     
-        if (!Gate::allows('delete')) {
+        if (!Gate::allows('admin-only')) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 

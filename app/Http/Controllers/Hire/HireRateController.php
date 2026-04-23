@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Hire;
 use App\Http\Controllers\Controller;
 use App\Models\HireRate;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 
 class HireRateController extends Controller
 {
@@ -22,12 +23,18 @@ class HireRateController extends Controller
 
     public function index()
     {
+        if (!Gate::allows('read')) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
         $rates = HireRate::with('category')->get()->map(fn($r) => $this->format($r));
         return response()->json(['data' => $rates]);
     }
 
     public function store(Request $request)
     {
+        if (!Gate::allows('admin-only')) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
         $validated = $request->validate([
             'cat_id'         => 'required|integer|exists:categories,cat_id|unique:hire_rates,hr_item_category',
             'rate_per_day'   => 'required|numeric|min:0',
@@ -52,6 +59,9 @@ class HireRateController extends Controller
 
     public function update(Request $request, $id)
     {
+        if (!Gate::allows('admin-only')) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
         $rate = HireRate::find($id);
         if (!$rate) {
             return response()->json(['message' => 'Hire rate not found'], 404);
@@ -79,6 +89,9 @@ class HireRateController extends Controller
 
     public function destroy($id)
     {
+        if (!Gate::allows('admin-only')) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
         $rate = HireRate::find($id);
         if (!$rate) {
             return response()->json(['message' => 'Hire rate not found'], 404);

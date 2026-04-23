@@ -39,6 +39,9 @@ class DisposalController extends Controller
 
     public function index(Request $request)
     {
+        if (!Gate::allows('read')) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
         $query = DisposalRecord::with('product')->orderBy('created_at', 'desc');
 
         if ($request->query('status')) {
@@ -53,6 +56,9 @@ class DisposalController extends Controller
 
     public function show($id)
     {
+        if (!Gate::allows('read')) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
         $rec = DisposalRecord::with('product')->find($id);
         if (!$rec) return response()->json(['message' => 'Record not found'], 404);
         return response()->json(['data' => $this->format($rec)]);
@@ -60,6 +66,9 @@ class DisposalController extends Controller
 
     public function store(Request $request)
     {
+        if (!Gate::allows('manage-disposal')) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
         $validated = $request->validate([
             'product_id'           => 'required|exists:products,prod_id',
             'dr_disposal_date'     => 'required|date',
@@ -99,6 +108,9 @@ class DisposalController extends Controller
 
     public function update(Request $request, $id)
     {
+        if (!Gate::allows('manage-disposal')) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
         $rec = DisposalRecord::find($id);
         if (!$rec) return response()->json(['message' => 'Record not found'], 404);
 
@@ -134,6 +146,9 @@ class DisposalController extends Controller
 
     public function approve($id)
     {
+        if (!Gate::allows('manage-disposal')) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
         $rec = DisposalRecord::find($id);
         if (!$rec) return response()->json(['message' => 'Record not found'], 404);
 
@@ -155,6 +170,9 @@ class DisposalController extends Controller
 
     public function complete($id)
     {
+        if (!Gate::allows('manage-disposal')) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
         $rec = DisposalRecord::find($id);
         if (!$rec) return response()->json(['message' => 'Record not found'], 404);
 
@@ -176,6 +194,9 @@ class DisposalController extends Controller
 
     public function destroy($id)
     {
+        if (!Gate::allows('manage-disposal')) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
         $rec = DisposalRecord::find($id);
         if (!$rec) return response()->json(['message' => 'Record not found'], 404);
 

@@ -7,6 +7,7 @@ use App\Models\Hire;
 use App\Models\Invoice;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 
 class InvoiceController extends Controller
@@ -19,6 +20,9 @@ class InvoiceController extends Controller
 
     public function index()
     {
+        if (!Gate::allows('manage-invoices')) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
         $invoices = Invoice::with('hire.staff')
             ->orderBy('created_at', 'desc')
             ->get()
@@ -29,6 +33,9 @@ class InvoiceController extends Controller
 
     public function generate($hireId)
     {
+        if (!Gate::allows('manage-invoices')) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
         $hire = Hire::with(['staff', 'items.product'])->find($hireId);
         if (!$hire) {
             return response()->json(['message' => 'Hire not found'], 404);
@@ -75,6 +82,9 @@ class InvoiceController extends Controller
 
     public function destroy($id)
     {
+        if (!Gate::allows('manage-invoices')) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
         $invoice = Invoice::find($id);
         if (!$invoice) {
             return response()->json(['message' => 'Invoice not found'], 404);

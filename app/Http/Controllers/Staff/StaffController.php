@@ -7,6 +7,7 @@ use Illuminate\Http\JsonResponse;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Gate;
 
 class StaffController extends Controller
 {
@@ -15,6 +16,9 @@ class StaffController extends Controller
      */
     public function index(): JsonResponse
     {
+        if (!Gate::allows('read')) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
         $staff = Staff::all();
         return response()->json([
             'status' => 'success',
@@ -27,6 +31,9 @@ class StaffController extends Controller
      */
     public function store(Request $request): JsonResponse
     {
+        if (!Gate::allows('admin-only')) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
         $validated = $request->validate([
             'staff_first_name' => 'required|string|max:255',
             'staff_last_name' => 'required|string|max:255',
@@ -50,6 +57,9 @@ class StaffController extends Controller
      */
     public function show(Staff $staff): JsonResponse
     {
+        if (!Gate::allows('read')) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
         return response()->json([
             'status' => 'success',
             'data' => $staff
@@ -61,6 +71,9 @@ class StaffController extends Controller
      */
     public function update(Request $request, Staff $staff): JsonResponse
     {
+        if (!Gate::allows('admin-only')) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
         $validated = $request->validate([
             'staff_first_name' => 'sometimes|required|string|max:255',
             'staff_last_name' => 'sometimes|required|string|max:255',
@@ -84,6 +97,9 @@ class StaffController extends Controller
      */
     public function destroy(Staff $staff): JsonResponse
     {
+        if (!Gate::allows('admin-only')) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
         $staff->delete();
 
         return response()->json([

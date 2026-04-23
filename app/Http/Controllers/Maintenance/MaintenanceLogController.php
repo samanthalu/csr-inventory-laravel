@@ -38,6 +38,9 @@ class MaintenanceLogController extends Controller
 
     public function index(Request $request)
     {
+        if (!Gate::allows('read')) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
         $query = MaintenanceLog::with('product')->orderBy('created_at', 'desc');
 
         if ($request->query('status')) {
@@ -49,6 +52,9 @@ class MaintenanceLogController extends Controller
 
     public function show($id)
     {
+        if (!Gate::allows('read')) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
         $log = MaintenanceLog::with('product')->find($id);
         if (!$log) return response()->json(['message' => 'Record not found'], 404);
         return response()->json(['data' => $this->format($log)]);
@@ -56,6 +62,9 @@ class MaintenanceLogController extends Controller
 
     public function store(Request $request)
     {
+        if (!Gate::allows('manage-maintenance')) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
         $validated = $request->validate([
             'product_id'              => 'required|exists:products,prod_id',
             'ml_sent_date'            => 'required|date',
@@ -95,6 +104,9 @@ class MaintenanceLogController extends Controller
 
     public function update(Request $request, $id)
     {
+        if (!Gate::allows('manage-maintenance')) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
         $log = MaintenanceLog::find($id);
         if (!$log) return response()->json(['message' => 'Record not found'], 404);
 
@@ -130,6 +142,9 @@ class MaintenanceLogController extends Controller
 
     public function complete(Request $request, $id)
     {
+        if (!Gate::allows('manage-maintenance')) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
         $log = MaintenanceLog::find($id);
         if (!$log) return response()->json(['message' => 'Record not found'], 404);
 
@@ -164,6 +179,9 @@ class MaintenanceLogController extends Controller
 
     public function destroy($id)
     {
+        if (!Gate::allows('manage-maintenance')) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
         $log = MaintenanceLog::find($id);
         if (!$log) return response()->json(['message' => 'Record not found'], 404);
 

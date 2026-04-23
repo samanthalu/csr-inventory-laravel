@@ -46,8 +46,9 @@ class SupplierController extends Controller
      */
     public function store(Request $request)
     {
-        // sleep(4);
-        //
+        if (!Gate::allows('admin-only')) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
         $validatedData = $request->validate([
             'sup_name'              => 'required|string|max:255',
             'sup_address'           => 'required|string|max:255',
@@ -107,8 +108,8 @@ class SupplierController extends Controller
     public function update(Request $request, string $id)
     {
         //
-        if (!Gate::allows('edit')) {
-            return response()->json(['message' => 'You are not authorized for this activity'], 403);
+        if (!Gate::allows('admin-only')) {
+            return response()->json(['message' => 'Unauthorized'], 403);
         }
 
         $supplier = Supplier::findOrFail($id);
@@ -142,6 +143,13 @@ class SupplierController extends Controller
      */
     public function destroy(string $id)
     {
-        //
+        if (!Gate::allows('admin-only')) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        $supplier = Supplier::findOrFail($id);
+        $supplier->delete();
+
+        return response()->json(['message' => 'Supplier deleted successfully']);
     }
 }

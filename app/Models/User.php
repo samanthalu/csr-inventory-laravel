@@ -16,11 +16,19 @@ class User extends Authenticatable
     const PERMISSION_EDIT       = 4;    // 0100
     const PERMISSION_DELETE     = 8;    // 1000
 
-    // Add this helper method for easy checks
-    public function hasPermission($permission)
+    const TYPE_ADMIN          = 'admin';
+    const TYPE_ICT            = 'ict';
+    const TYPE_ADMINISTRATION = 'administration';
+    const TYPE_STANDARD       = 'standard';
+
+    public function hasPermission($permission): bool
     {
         return ($this->permissions & $permission) === $permission;
     }
+
+    public function isAdmin(): bool          { return $this->user_type === self::TYPE_ADMIN; }
+    public function isIct(): bool            { return $this->user_type === self::TYPE_ICT; }
+    public function isAdministration(): bool { return $this->user_type === self::TYPE_ADMINISTRATION; }
 
     /**
      * The attributes that are mass assignable.

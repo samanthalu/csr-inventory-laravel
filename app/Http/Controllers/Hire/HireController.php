@@ -9,6 +9,7 @@ use App\Models\HireRate;
 use App\Services\AuditLogger;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Carbon\Carbon;
 
 class HireController extends Controller
@@ -43,6 +44,9 @@ class HireController extends Controller
 
     public function index()
     {
+        if (!Gate::allows('read')) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
         $hires = Hire::with(['staff', 'items.product'])
             ->orderBy('created_at', 'desc')
             ->get()
@@ -53,6 +57,9 @@ class HireController extends Controller
 
     public function show($id)
     {
+        if (!Gate::allows('read')) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
         $hire = Hire::with(['staff', 'items.product'])->find($id);
         if (!$hire) {
             return response()->json(['message' => 'Hire not found'], 404);
@@ -62,6 +69,9 @@ class HireController extends Controller
 
     public function store(Request $request)
     {
+        if (!Gate::allows('manage-hire')) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
         $validated = $request->validate([
             'staff_id'         => 'required|exists:staff,staff_id',
             'hire_date'        => 'required|date',
@@ -118,6 +128,9 @@ class HireController extends Controller
 
     public function update(Request $request, $id)
     {
+        if (!Gate::allows('manage-hire')) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
         $hire = Hire::find($id);
         if (!$hire) {
             return response()->json(['message' => 'Hire not found'], 404);
@@ -143,6 +156,9 @@ class HireController extends Controller
 
     public function returnItem($hireId, $itemId)
     {
+        if (!Gate::allows('manage-hire')) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
         $item = HireItem::where('hire_id', $hireId)->where('id', $itemId)->first();
         if (!$item) {
             return response()->json(['message' => 'Item not found'], 404);
@@ -155,6 +171,9 @@ class HireController extends Controller
 
     public function return($id)
     {
+        if (!Gate::allows('manage-hire')) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
         $hire = Hire::find($id);
         if (!$hire) {
             return response()->json(['message' => 'Hire not found'], 404);
@@ -169,6 +188,9 @@ class HireController extends Controller
 
     public function destroy($id)
     {
+        if (!Gate::allows('manage-hire')) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
         $hire = Hire::find($id);
         if (!$hire) {
             return response()->json(['message' => 'Hire not found'], 404);

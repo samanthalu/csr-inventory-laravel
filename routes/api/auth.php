@@ -5,9 +5,13 @@
     use App\Http\Controllers\ProductController;
     use App\Http\Controllers\User\UserController;
 
-    Route::post('/register', [UserController::class, 'create']);
-    Route::get('/get-users', [UserController::class, 'getUsers'])->middleware(['auth:sanctum']);
-    Route::get('/get-user', [UserController::class, 'getUser'])->middleware(['auth:sanctum']);
-    Route::post('/edit-user', [UserController::class, 'editUser'])->middleware(['auth:sanctum']);
+    Route::middleware(['auth:sanctum'])->group(function () {
+        Route::post('/register',     [UserController::class, 'create']);
+        Route::get('/get-users',     [UserController::class, 'getUsers']);
+        Route::get('/get-user',      [UserController::class, 'getUser']);
+        Route::post('/edit-user',    [UserController::class, 'editUser']);
+        Route::get('/delete-user',   [UserController::class, 'deleteUser']);
+    });
+
+    // Re-auth popup — any authenticated user may verify their own credentials
     Route::post('/auth-user', [UserController::class, 'authUser'])->middleware(['auth:sanctum']);
-    Route::get('/delete-user', [UserController::class, 'deleteUser'])->middleware(['auth:sanctum']);
