@@ -20,3 +20,4 @@ include 'api/hire.php';
 include 'api/maintenance.php';
 include 'api/disposal.php';
 include 'api/reports.php';
+include 'api/notifications.php';
