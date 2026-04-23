@@ -19,3 +19,4 @@ include 'api/product.php';
 include 'api/hire.php';
 include 'api/maintenance.php';
 include 'api/disposal.php';
+include 'api/reports.php';
