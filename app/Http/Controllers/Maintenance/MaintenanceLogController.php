@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Maintenance;
 use App\Http\Controllers\Controller;
 use App\Models\MaintenanceLog;
 use App\Models\Product;
+use App\Services\AuditLogger;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -83,6 +84,8 @@ class MaintenanceLogController extends Controller
 
             DB::commit();
             $log->load('product');
+            $prodName = optional($log->product)->prod_name ?? "product #{$log->product_id}";
+            AuditLogger::log('maintenance', 'created', "Maintenance log created for {$prodName}", $log->id, null, $this->format($log));
             return response()->json(['message' => 'Maintenance log created', 'data' => $this->format($log)], 201);
         } catch (\Exception $e) {
             DB::rollBack();
@@ -117,6 +120,7 @@ class MaintenanceLogController extends Controller
 
             DB::commit();
             $log->load('product');
+            AuditLogger::log('maintenance', 'updated', "Maintenance log #{$id} updated", (int) $id, null, $this->format($log));
             return response()->json(['message' => 'Maintenance log updated', 'data' => $this->format($log)]);
         } catch (\Exception $e) {
             DB::rollBack();
@@ -149,6 +153,8 @@ class MaintenanceLogController extends Controller
 
             DB::commit();
             $log->load('product');
+            $prodName = optional($log->product)->prod_name ?? "product #{$log->product_id}";
+            AuditLogger::log('maintenance', 'completed', "Maintenance for {$prodName} completed", $log->id, null, $this->format($log));
             return response()->json(['message' => 'Maintenance completed — product marked available', 'data' => $this->format($log)]);
         } catch (\Exception $e) {
             DB::rollBack();
@@ -167,6 +173,7 @@ class MaintenanceLogController extends Controller
                 ->update(['prod_current_status' => 'available']);
         }
 
+        AuditLogger::log('maintenance', 'deleted', "Maintenance log #{$id} deleted", (int) $id);
         $log->delete();
         return response()->json(['message' => 'Maintenance log deleted']);
     }

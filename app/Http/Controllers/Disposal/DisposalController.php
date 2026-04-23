@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Disposal;
 use App\Http\Controllers\Controller;
 use App\Models\DisposalRecord;
 use App\Models\Product;
+use App\Services\AuditLogger;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -87,6 +88,8 @@ class DisposalController extends Controller
 
             DB::commit();
             $rec->load('product');
+            $prodName = optional($rec->product)->prod_name ?? "product #{$rec->product_id}";
+            AuditLogger::log('disposal', 'created', "Disposal record created for {$prodName}", $rec->id, null, $this->format($rec));
             return response()->json(['message' => 'Disposal record created', 'data' => $this->format($rec)], 201);
         } catch (\Exception $e) {
             DB::rollBack();
@@ -121,6 +124,7 @@ class DisposalController extends Controller
 
             DB::commit();
             $rec->load('product');
+            AuditLogger::log('disposal', 'updated', "Disposal record #{$id} updated", (int) $id, null, $this->format($rec));
             return response()->json(['message' => 'Disposal record updated', 'data' => $this->format($rec)]);
         } catch (\Exception $e) {
             DB::rollBack();
@@ -140,6 +144,8 @@ class DisposalController extends Controller
                 ->update(['prod_current_status' => 'disposed']);
             DB::commit();
             $rec->load('product');
+            $prodName = optional($rec->product)->prod_name ?? "product #{$rec->product_id}";
+            AuditLogger::log('disposal', 'approved', "Disposal for {$prodName} approved", $rec->id, null, $this->format($rec));
             return response()->json(['message' => 'Disposal approved — product marked as disposed', 'data' => $this->format($rec)]);
         } catch (\Exception $e) {
             DB::rollBack();
@@ -159,6 +165,8 @@ class DisposalController extends Controller
                 ->update(['prod_current_status' => 'disposed']);
             DB::commit();
             $rec->load('product');
+            $prodName = optional($rec->product)->prod_name ?? "product #{$rec->product_id}";
+            AuditLogger::log('disposal', 'completed', "Disposal for {$prodName} completed", $rec->id, null, $this->format($rec));
             return response()->json(['message' => 'Disposal completed', 'data' => $this->format($rec)]);
         } catch (\Exception $e) {
             DB::rollBack();
@@ -177,6 +185,7 @@ class DisposalController extends Controller
                 ->update(['prod_current_status' => 'available']);
         }
 
+        AuditLogger::log('disposal', 'deleted', "Disposal record #{$id} deleted", (int) $id);
         $rec->delete();
         return response()->json(['message' => 'Disposal record deleted']);
     }

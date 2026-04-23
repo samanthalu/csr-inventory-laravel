@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Hire;
 use App\Models\HireItem;
 use App\Models\HireRate;
+use App\Services\AuditLogger;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
@@ -101,6 +102,9 @@ class HireController extends Controller
             DB::commit();
 
             $hire->load(['staff', 'items.product']);
+            $staffName = optional($hire->staff)->staff_first_name . ' ' . optional($hire->staff)->staff_last_name;
+            AuditLogger::log('hire', 'created', "Hire created for {$staffName}", $hire->id, null, $this->formatHire($hire));
+
             return response()->json([
                 'message' => 'Hire created successfully',
                 'data'    => $this->formatHire($hire),
@@ -129,6 +133,8 @@ class HireController extends Controller
         $hire->update($validated);
         $hire->load(['staff', 'items.product']);
 
+        AuditLogger::log('hire', 'updated', "Hire #{$id} updated", (int) $id, null, $this->formatHire($hire));
+
         return response()->json([
             'message' => 'Hire updated successfully',
             'data'    => $this->formatHire($hire),
@@ -156,6 +162,8 @@ class HireController extends Controller
 
         $hire->update(['hire_status' => 'returned']);
 
+        AuditLogger::log('hire', 'returned', "Hire #{$id} marked as returned", (int) $id);
+
         return response()->json(['message' => 'Hire marked as returned']);
     }
 
@@ -166,6 +174,7 @@ class HireController extends Controller
             return response()->json(['message' => 'Hire not found'], 404);
         }
 
+        AuditLogger::log('hire', 'deleted', "Hire #{$id} deleted", (int) $id);
         $hire->delete();
         return response()->json(['message' => 'Hire deleted successfully']);
     }

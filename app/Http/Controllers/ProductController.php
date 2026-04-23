@@ -13,6 +13,7 @@ use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
+use App\Services\AuditLogger;
 
 class ProductController extends Controller
 {
@@ -157,6 +158,8 @@ class ProductController extends Controller
             $product = Product::create($validated);
             $insertId = $product->prod_id;
 
+            AuditLogger::log('product', 'created', "Product '{$product->prod_name}' created", $insertId, null, $product->toArray());
+
             return response()->json([
                 'success' => true,
                 'data' => $product,
@@ -197,6 +200,7 @@ class ProductController extends Controller
             $id = $request->prod_id;
             $product = Product::findOrFail($id);
             $this->authorize('update', Product::class);
+            $oldValues = $product->toArray();
 
             $validator = Validator::make($request->all(), [
                 'prod_name' => 'required|string|max:255',
@@ -224,6 +228,8 @@ class ProductController extends Controller
             $validated = $validator->validate();
             
             $product->update($validated);
+
+            AuditLogger::log('product', 'updated', "Product '{$product->prod_name}' updated", $product->prod_id, $oldValues, $product->fresh()->toArray());
 
             return response()->json([
                 'success' => true,
@@ -261,8 +267,11 @@ class ProductController extends Controller
         try {
             $product = Product::findOrFail($id);
             $this->authorize('delete', Product::class);
-            
+            $name = $product->prod_name;
+
             $product->delete();
+
+            AuditLogger::log('product', 'deleted', "Product '{$name}' deleted", (int) $id);
 
             return response()->json([
                 'success' => true,
