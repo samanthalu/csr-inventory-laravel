@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Hire\HireController;
+use App\Http\Controllers\Hire\HireRateController;
 use App\Http\Controllers\Hire\InvoiceController;
 use Illuminate\Support\Facades\Route;
 
@@ -12,6 +13,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::patch('/hires/{id}/return',              [HireController::class, 'return']);
     Route::patch('/hires/{hireId}/items/{itemId}/return', [HireController::class, 'returnItem']);
     Route::delete('/hires/{id}',      [HireController::class, 'destroy']);
+
+    // Hire rates
+    Route::get('/hire-rates',          [HireRateController::class, 'index']);
+    Route::post('/hire-rates',         [HireRateController::class, 'store']);
+    Route::put('/hire-rates/{id}',     [HireRateController::class, 'update']);
+    Route::delete('/hire-rates/{id}',  [HireRateController::class, 'destroy']);
 
     // Invoices
     Route::get('/invoices',                        [InvoiceController::class, 'index']);
