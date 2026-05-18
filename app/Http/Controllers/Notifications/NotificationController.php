@@ -17,7 +17,7 @@ class NotificationController extends Controller
             'sent_by'    => $n->notif_by,
             'sent_to'    => $n->notif_to,
             'date'       => $n->notif_date?->format('d M Y'),
-            'status'     => $n->notif_status ?? 'unread',
+            'status'     => $n->notif_status === 0 ? 'unread' : 'read',
             'sender'     => $n->sender ? ['id' => $n->sender->id, 'name' => $n->sender->name] : null,
         ];
     }
@@ -32,7 +32,7 @@ class NotificationController extends Controller
             ->map(fn($n) => $this->format($n));
 
         $unreadCount = Notification::where('notif_to', $userId)
-            ->where('notif_status', 'unread')
+            ->where('notif_status', 0)
             ->count();
 
         return response()->json(['data' => $notifs, 'unread_count' => $unreadCount]);
@@ -41,7 +41,7 @@ class NotificationController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'message' => 'required|string',
+            'message'  => 'required|string',
             'notif_to' => 'required|integer|exists:users,id',
         ]);
 
@@ -50,7 +50,7 @@ class NotificationController extends Controller
             'notif_by'     => Auth::id(),
             'notif_to'     => $validated['notif_to'],
             'notif_date'   => now()->toDateString(),
-            'notif_status' => 'unread',
+            'notif_status' => 0,
         ]);
 
         $notif->load('sender');
@@ -65,15 +65,15 @@ class NotificationController extends Controller
 
         if (!$notif) return response()->json(['message' => 'Not found'], 404);
 
-        $notif->update(['notif_status' => 'read']);
+        $notif->update(['notif_status' => 1]);
         return response()->json(['message' => 'Marked as read', 'data' => $this->format($notif)]);
     }
 
     public function markAllRead()
     {
         Notification::where('notif_to', Auth::id())
-            ->where('notif_status', 'unread')
-            ->update(['notif_status' => 'read']);
+            ->where('notif_status', 0)
+            ->update(['notif_status' => 1]);
 
         return response()->json(['message' => 'All notifications marked as read']);
     }
@@ -93,7 +93,7 @@ class NotificationController extends Controller
     public function unreadCount()
     {
         $count = Notification::where('notif_to', Auth::id())
-            ->where('notif_status', 'unread')
+            ->where('notif_status', 0)
             ->count();
 
         return response()->json(['count' => $count]);

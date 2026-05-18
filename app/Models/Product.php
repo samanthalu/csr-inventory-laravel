@@ -71,4 +71,8 @@ class Product extends Model
     public function borrower() {
         return $this->belongsTo(Borrower::class, 'pb_prod_id', 'prod_id');
     }
+
+    public function assignedUser() {
+        return $this->belongsTo(User::class, 'user_id', 'id');
+    }
 }

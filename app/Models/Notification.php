@@ -8,6 +8,7 @@ class Notification extends Model
 {
     protected $table      = 'notifs';
     protected $primaryKey = 'notif_id';
+    public $timestamps    = false;
 
     protected $fillable = [
         'notif',
@@ -18,7 +19,8 @@ class Notification extends Model
     ];
 
     protected $casts = [
-        'notif_date' => 'date',
+        'notif_date'   => 'date',
+        'notif_status' => 'integer',
     ];
 
     public function sender()

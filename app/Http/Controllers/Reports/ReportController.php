@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Reports;
 
 use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class ReportController extends Controller
@@ -183,6 +184,98 @@ class ReportController extends Controller
                 'total_logs'      => $totalLogs,
                 'completed_logs'  => $completedLogs,
             ]
+        ]);
+    }
+
+    public function products(Request $request)
+    {
+        $categoryId = $request->query('category_id');
+        $status     = $request->query('status');
+        $condition  = $request->query('condition');
+        $hireMonth  = $request->query('hire_month');
+        $hireYear   = $request->query('hire_year');
+
+        $hirePeriodActive = $hireMonth || $hireYear;
+
+        $query = DB::table('products')
+            ->leftJoin('category', 'products.cat_id', '=', 'category.cat_id')
+            ->select(
+                'products.prod_id',
+                'products.prod_name',
+                'products.prod_tag_number',
+                'products.prod_serial_num',
+                'products.prod_model_number',
+                'products.prod_cost',
+                'products.prod_quantity',
+                'products.prod_condition',
+                'products.prod_current_status',
+                'category.cat_name as category'
+            );
+
+        if ($hirePeriodActive) {
+            $hireSubquery = DB::table('hire_items')
+                ->join('hires', 'hire_items.hire_id', '=', 'hires.id')
+                ->select('hire_items.product_id', DB::raw('COUNT(*) as hire_count'));
+
+            if ($hireMonth) {
+                $hireSubquery->whereMonth('hires.hire_date', (int) $hireMonth);
+            }
+            if ($hireYear) {
+                $hireSubquery->whereYear('hires.hire_date', (int) $hireYear);
+            }
+
+            $hireSubquery->groupBy('hire_items.product_id');
+
+            $query->leftJoinSub($hireSubquery, 'hc', 'hc.product_id', '=', 'products.prod_id')
+                  ->addSelect(DB::raw('COALESCE(hc.hire_count, 0) as hire_count'));
+        }
+
+        if ($categoryId) {
+            $query->where('products.cat_id', (int) $categoryId);
+        }
+
+        if ($status) {
+            $query->whereRaw('LOWER(products.prod_current_status) = ?', [strtolower($status)]);
+        }
+
+        if ($condition) {
+            $query->whereRaw('LOWER(products.prod_condition) = ?', [strtolower($condition)]);
+        }
+
+        $query->orderBy('products.prod_name');
+
+        $rows = $query->get()->map(function ($r) use ($hirePeriodActive) {
+            $row = [
+                'prod_id'             => $r->prod_id,
+                'prod_name'           => $r->prod_name,
+                'prod_tag_number'     => $r->prod_tag_number,
+                'prod_serial_num'     => $r->prod_serial_num,
+                'prod_model_number'   => $r->prod_model_number,
+                'prod_cost'           => (float) $r->prod_cost,
+                'prod_quantity'       => (int) $r->prod_quantity,
+                'prod_condition'      => $r->prod_condition,
+                'prod_current_status' => $r->prod_current_status,
+                'category'            => $r->category,
+            ];
+            if ($hirePeriodActive) {
+                $row['hire_count'] = (int) $r->hire_count;
+            }
+            return $row;
+        });
+
+        $totalValue = $rows->sum('prod_cost');
+
+        return response()->json([
+            'data'        => $rows->values(),
+            'total'       => $rows->count(),
+            'total_value' => (float) $totalValue,
+            'filters'     => [
+                'category_id' => $categoryId ? (int) $categoryId : null,
+                'status'      => $status ?: null,
+                'condition'   => $condition ?: null,
+                'hire_month'  => $hireMonth ? (int) $hireMonth : null,
+                'hire_year'   => $hireYear  ? (int) $hireYear  : null,
+            ],
         ]);
     }
 

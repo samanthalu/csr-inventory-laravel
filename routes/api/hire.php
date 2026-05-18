@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Hire\HireController;
 use App\Http\Controllers\Hire\HireRateController;
+use App\Http\Controllers\Hire\HireRequestController;
 use App\Http\Controllers\Hire\InvoiceController;
 use Illuminate\Support\Facades\Route;
 
@@ -19,6 +20,13 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/hire-rates',         [HireRateController::class, 'store']);
     Route::put('/hire-rates/{id}',     [HireRateController::class, 'update']);
     Route::delete('/hire-rates/{id}',  [HireRateController::class, 'destroy']);
+
+    // Hire requests (staff-initiated)
+    Route::get('/hire-requests',                    [HireRequestController::class, 'index']);
+    Route::post('/hire-requests',                   [HireRequestController::class, 'store']);
+    Route::get('/hire-requests/{id}',               [HireRequestController::class, 'show']);
+    Route::patch('/hire-requests/{id}/approve',     [HireRequestController::class, 'approve']);
+    Route::patch('/hire-requests/{id}/reject',      [HireRequestController::class, 'reject']);
 
     // Invoices
     Route::get('/invoices',                        [InvoiceController::class, 'index']);

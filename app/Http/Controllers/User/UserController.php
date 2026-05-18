@@ -48,7 +48,7 @@ class UserController extends Controller
             'name' => $request->name,
             'email' => $request->email,
             'user_type'  => $request->user_type,
-            'permissions' => $permissions,
+            'legacy_permissions' => $permissions,
             'password' => Hash::make($request->string('password')),
         ]);
 
@@ -65,7 +65,7 @@ class UserController extends Controller
 
         // $user_roles->save();
 
-        return response()->json(['message' => 'User created successfully']);
+        return response()->json(['message' => 'User created successfully', 'user' => ['id' => $user->id]]);
 
     }
 
@@ -122,7 +122,7 @@ class UserController extends Controller
 
             $user->name     =$request->name;
             $user->email    =$request->email;
-            $user->permissions = $permissions;
+            $user->legacy_permissions = $permissions;
             $user->user_type = $request->user_type;
             
            // check if user is changing password

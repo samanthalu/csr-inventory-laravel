@@ -6,10 +6,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
 {
-    use HasFactory, Notifiable;
+    use HasFactory, Notifiable, HasRoles;
 
     const PERMISSION_READ       = 1;    // 0001
     const PERMISSION_CREATE     = 2;    // 0010
@@ -23,7 +24,7 @@ class User extends Authenticatable
 
     public function hasPermission($permission): bool
     {
-        return ($this->permissions & $permission) === $permission;
+        return ($this->legacy_permissions & $permission) === $permission;
     }
 
     public function isAdmin(): bool          { return $this->user_type === self::TYPE_ADMIN; }
@@ -39,7 +40,7 @@ class User extends Authenticatable
         'name',
         'email',
         'user_type',
-        'permissions',
+        'legacy_permissions',
         'password',
     ];
 

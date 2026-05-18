@@ -6,7 +6,8 @@ use Illuminate\Support\Facades\Route;
 
 Route::middleware('auth:sanctum')->group(function () {
     // Alerts (live, computed)
-    Route::get('/alerts', [AlertController::class, 'index']);
+    Route::get('/alerts',          [AlertController::class, 'index']);
+    Route::post('/alerts/dismiss', [AlertController::class, 'dismiss']);
 
     // Notifications (stored in notifs table)
     Route::get('/notifications',              [NotificationController::class, 'index']);

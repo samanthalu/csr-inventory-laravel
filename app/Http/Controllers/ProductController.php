@@ -78,7 +78,7 @@ class ProductController extends Controller
         }
 
         try {
-            $product = Product::with(['accessories', 'files', 'supplier', 'category'])->findOrFail($id);
+            $product = Product::with(['accessories', 'files', 'supplier', 'category', 'assignedUser:id,name,email,user_type'])->findOrFail($id);
             $this->authorize('view', Product::class);
 
             return response()->json([
@@ -138,22 +138,15 @@ class ProductController extends Controller
                 'cat_id' => 'nullable|integer',
                 'sup_id' => 'nullable|integer',
                 'order_id' => 'nullable|integer',
-                'user_id' => 'nullable|integer',
                 'prod_notes' => 'nullable|string',
                 'prod_warranty_expire' => 'nullable|date',
                 'prod_condition' => 'nullable|string',
                 'prod_current_status' => 'nullable|string',
             ]);
 
-            // 'cat_id' => 'nullable|integer|exists:categories,id',
-            //     'sup_id' => 'nullable|integer|exists:suppliers,id',
-            //     'order_id' => 'nullable|integer|exists:orders,id',
-            //     'user_id' => 'nullable|integer|exists:users,id',
-            
-            $validator->stopOnFirstFailure(); 
-            $validated = $validator->validate(); 
-            // \Log::info($request);
-            // \Log::info($validated);
+            $validator->stopOnFirstFailure();
+            $validated = $validator->validate();
+            $validated['user_id'] = Auth::id();
 
             $product = Product::create($validated);
             $insertId = $product->prod_id;
@@ -217,16 +210,16 @@ class ProductController extends Controller
                 'cat_id' => 'nullable|integer',
                 'sup_id' => 'nullable|integer',
                 'order_id' => 'nullable|integer',
-                'user_id' => 'nullable|integer',
                 'prod_notes' => 'nullable|string',
                 'prod_warranty_expire' => 'nullable|date',
                 'prod_condition' => 'nullable|string',
                 'prod_current_status' => 'nullable|string',
             ]);
-            
+
             $validator->stopOnFirstFailure();
             $validated = $validator->validate();
-            
+            unset($validated['user_id']);
+
             $product->update($validated);
 
             AuditLogger::log('product', 'updated', "Product '{$product->prod_name}' updated", $product->prod_id, $oldValues, $product->fresh()->toArray());
