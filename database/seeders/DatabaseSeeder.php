@@ -4,36 +4,38 @@ namespace Database\Seeders;
 
 use App\Models\Borrower;
 use App\Models\User;
-Use App\Models\Product;
-Use App\Models\Supplier;
-Use App\Models\Category;
-Use App\Models\Software;
-Use App\Models\Staff;
-Use App\Models\StaffProduct;
-// use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use App\Models\Product;
+use App\Models\Supplier;
+use App\Models\Category;
+use App\Models\Software;
+use App\Models\Staff;
+use App\Models\StaffProduct;
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
 {
-    /**
-     * Seed the application's database.
-     */
     public function run(): void
     {
-        // User::factory(10)->create();
-      
-
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
+        // Always run in production and development
+        $this->call([
+            RolesAndPermissionsSeeder::class,
+            SuperAdminSeeder::class,
         ]);
 
-        Supplier::factory(20)->create();
-        Category::factory(10)->create();
-        Product::factory(50)->create();
-        Software::factory()->count(10)->create();
-        Staff::factory()->count(10)->create();
-        Borrower::factory((40))->create();
-        StaffProduct::factory(50)->create();
+        // Dev-only fake data — skip in production
+        if (app()->isLocal()) {
+            User::factory()->create([
+                'name'  => 'Test User',
+                'email' => 'test@example.com',
+            ]);
+
+            Supplier::factory(20)->create();
+            Category::factory(10)->create();
+            Product::factory(50)->create();
+            Software::factory()->count(10)->create();
+            Staff::factory()->count(10)->create();
+            Borrower::factory(40)->create();
+            StaffProduct::factory(50)->create();
+        }
     }
 }
