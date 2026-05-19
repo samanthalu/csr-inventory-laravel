@@ -3,7 +3,7 @@
 use App\Http\Controllers\Reports\ReportController;
 use Illuminate\Support\Facades\Route;
 
-Route::middleware('auth:sanctum')->prefix('reports')->group(function () {
+Route::middleware(['auth:sanctum', 'permission:view_reports'])->prefix('reports')->group(function () {
     Route::get('/summary',     [ReportController::class, 'summary']);
     Route::get('/assets',      [ReportController::class, 'assets']);
     Route::get('/products',    [ReportController::class, 'products']);
