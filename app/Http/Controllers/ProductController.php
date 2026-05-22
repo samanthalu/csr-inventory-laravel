@@ -266,7 +266,26 @@ class ProductController extends Controller
         try {
             $product = Product::findOrFail($id);
             $this->authorize('delete', Product::class);
+
+            // Block deletion if product has business records
+            $blocking = [];
+            if ($product->hireItems()->exists())      $blocking[] = 'hire records';
+            if ($product->maintenanceLogs()->exists()) $blocking[] = 'maintenance records';
+            if ($product->disposalRecords()->exists()) $blocking[] = 'disposal records';
+
+            if (!empty($blocking)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Cannot delete: this product has ' . implode(', ', $blocking) . '. Remove them first or use disposal instead.',
+                ], Response::HTTP_CONFLICT);
+            }
+
             $name = $product->prod_name;
+
+            // Delete owned records first
+            $product->accessories()->delete();
+            $product->files()->delete();
+            $product->staffProducts()->delete();
 
             $product->delete();
 
@@ -290,10 +309,6 @@ class ProductController extends Controller
                     Response::HTTP_FORBIDDEN => 'You do not have permission to delete products',
                     default => 'Failed to delete product'
                 },
-                'error' => [
-                    'type' => get_class($e),
-                    'details' => $e->getMessage()
-                ]
             ], $statusCode);
         }
     }

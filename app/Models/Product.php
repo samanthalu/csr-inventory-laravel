@@ -4,6 +4,10 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\HireItem;
+use App\Models\MaintenanceLog;
+use App\Models\DisposalRecord;
+use App\Models\StaffProduct;
 use App\Models\ProductAccessories;
 use App\Models\ProductFiles;
 
@@ -77,4 +81,9 @@ class Product extends Model
     public function assignedUser() {
         return $this->belongsTo(User::class, 'user_id', 'id');
     }
+
+    public function hireItems()     { return $this->hasMany(HireItem::class,      'product_id', 'prod_id'); }
+    public function maintenanceLogs(){ return $this->hasMany(MaintenanceLog::class, 'product_id', 'prod_id'); }
+    public function disposalRecords(){ return $this->hasMany(DisposalRecord::class, 'product_id', 'prod_id'); }
+    public function staffProducts() { return $this->hasMany(StaffProduct::class,   'sp_prod_id', 'prod_id'); }
 }
