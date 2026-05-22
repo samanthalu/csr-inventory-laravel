@@ -266,34 +266,16 @@ class ProductController extends Controller
         try {
             $product = Product::findOrFail($id);
             $this->authorize('delete', Product::class);
-
-            // Block deletion if product has business records
-            $blocking = [];
-            if ($product->hireItems()->exists())      $blocking[] = 'hire records';
-            if ($product->maintenanceLogs()->exists()) $blocking[] = 'maintenance records';
-            if ($product->disposalRecords()->exists()) $blocking[] = 'disposal records';
-
-            if (!empty($blocking)) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Cannot delete: this product has ' . implode(', ', $blocking) . '. Remove them first or use disposal instead.',
-                ], Response::HTTP_CONFLICT);
-            }
-
             $name = $product->prod_name;
 
-            // Delete owned records first
-            $product->accessories()->delete();
-            $product->files()->delete();
-            $product->staffProducts()->delete();
-
+            // Soft delete — row stays in DB, deleted_at is set
             $product->delete();
 
-            AuditLogger::log('product', 'deleted', "Product '{$name}' deleted", (int) $id);
+            AuditLogger::log('product', 'deleted', "Product '{$name}' moved to trash", (int) $id);
 
             return response()->json([
                 'success' => true,
-                'message' => 'Product deleted successfully'
+                'message' => 'Product moved to trash',
             ]);
         } catch (\Exception $e) {
             $statusCode = match(true) {
@@ -301,13 +283,12 @@ class ProductController extends Controller
                 $e instanceof \Illuminate\Auth\Access\AuthorizationException => Response::HTTP_FORBIDDEN,
                 default => Response::HTTP_INTERNAL_SERVER_ERROR
             };
-
             return response()->json([
                 'success' => false,
                 'message' => match($statusCode) {
                     Response::HTTP_NOT_FOUND => 'Product not found',
                     Response::HTTP_FORBIDDEN => 'You do not have permission to delete products',
-                    default => 'Failed to delete product'
+                    default => 'Failed to delete product',
                 },
             ], $statusCode);
         }
@@ -315,5 +296,62 @@ class ProductController extends Controller
 
     public function getSelectProducts(Request $request) {
         return ProductSelectResource::collection(Product::all());
+    }
+
+    public function trash()
+    {
+        if (!Gate::allows('delete')) {
+            return response()->json(['message' => 'You are not authorized for this activity'], 403);
+        }
+        $products = Product::onlyTrashed()
+            ->with(['supplier:sup_id,sup_name', 'category:cat_id,cat_name'])
+            ->orderByDesc('deleted_at')
+            ->get();
+        return response()->json(['data' => $products]);
+    }
+
+    public function restore($id)
+    {
+        if (!Gate::allows('edit')) {
+            return response()->json(['message' => 'You are not authorized for this activity'], 403);
+        }
+        $product = Product::onlyTrashed()->findOrFail($id);
+        $product->restore();
+        AuditLogger::log('product', 'restored', "Product '{$product->prod_name}' restored from trash", (int) $id);
+        return response()->json(['success' => true, 'message' => 'Product restored successfully']);
+    }
+
+    public function forceDelete($id)
+    {
+        if (!Gate::allows('delete')) {
+            return response()->json(['message' => 'You are not authorized for this activity'], 403);
+        }
+        try {
+            $product = Product::onlyTrashed()->findOrFail($id);
+
+            // Block permanent deletion if product has business records
+            $blocking = [];
+            if ($product->hireItems()->exists())       $blocking[] = 'hire records';
+            if ($product->maintenanceLogs()->exists())  $blocking[] = 'maintenance records';
+            if ($product->disposalRecords()->exists())  $blocking[] = 'disposal records';
+
+            if (!empty($blocking)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Cannot permanently delete: product has ' . implode(', ', $blocking) . '.',
+                ], Response::HTTP_CONFLICT);
+            }
+
+            $name = $product->prod_name;
+            $product->accessories()->delete();
+            $product->files()->delete();
+            $product->staffProducts()->delete();
+            $product->forceDelete();
+
+            AuditLogger::log('product', 'force_deleted', "Product '{$name}' permanently deleted", (int) $id);
+            return response()->json(['success' => true, 'message' => 'Product permanently deleted']);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => 'Failed to permanently delete product'], 500);
+        }
     }
 }

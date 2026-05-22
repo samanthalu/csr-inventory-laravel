@@ -14,11 +14,14 @@ use App\Http\Controllers\Staff\StaffProductController;
 
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/products', [ProductController::class, 'getProducts']);
+    Route::get('/products/trash', [ProductController::class, 'trash']);
+    Route::get('/products/select-products', [ProductController::class, 'getSelectProducts']);
     Route::post('/products/add-product', [ProductController::class, 'addProduct']);
     Route::put('/products/edit-product', [ProductController::class, 'updateProduct']);
     Route::delete('/product/delete-product/{id}', [ProductController::class, 'deleteProduct']);
+    Route::post('/product/{id}/restore', [ProductController::class, 'restore']);
+    Route::delete('/product/{id}/force-delete', [ProductController::class, 'forceDelete']);
     Route::get('/product/{id}', [ProductController::class, 'getProductById']);
-    Route::get('/products/select-products', [ProductController::class, 'getSelectProducts']);
 });
 
 Route::prefix('accessories')->group(function () {
