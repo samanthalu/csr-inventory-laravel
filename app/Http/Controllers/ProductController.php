@@ -142,6 +142,9 @@ class ProductController extends Controller
                 'prod_warranty_expire' => 'nullable|date',
                 'prod_condition' => 'nullable|string',
                 'prod_current_status' => 'nullable|string',
+                'custom_fields' => 'nullable|array',
+                'custom_fields.*.key' => 'required_with:custom_fields.*|string|max:100',
+                'custom_fields.*.value' => 'nullable|string|max:500',
             ]);
 
             $validator->stopOnFirstFailure();
@@ -214,6 +217,9 @@ class ProductController extends Controller
                 'prod_warranty_expire' => 'nullable|date',
                 'prod_condition' => 'nullable|string',
                 'prod_current_status' => 'nullable|string',
+                'custom_fields' => 'nullable|array',
+                'custom_fields.*.key' => 'required_with:custom_fields.*|string|max:100',
+                'custom_fields.*.value' => 'nullable|string|max:500',
             ]);
 
             $validator->stopOnFirstFailure();

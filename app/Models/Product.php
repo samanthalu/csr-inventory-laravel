@@ -31,6 +31,7 @@ class Product extends Model
         'order_id',
         'user_id',
         'prod_notes',
+        'custom_fields',
         'prod_warranty_expire',
         'prod_condition',
         'prod_current_status'
@@ -44,6 +45,7 @@ class Product extends Model
         'prod_quantity' => 'integer',
         'prod_purchase_date' => 'date',
         'prod_warranty_expire' => 'date',
+        'custom_fields' => 'array',
         'created_at' => 'datetime',
         'updated_at' => 'datetime'
     ];
