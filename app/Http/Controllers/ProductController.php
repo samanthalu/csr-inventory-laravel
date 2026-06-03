@@ -31,21 +31,58 @@ class ProductController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function getProducts()
+    public function getProducts(Request $request)
     {
-        // sleep(5);
         if (!Gate::allows('view_products')) {
             return response()->json(['message' => 'You are not authorized for this activity'], 403);
         }
-        
+
         try {
             $this->authorize('viewAny', Product::class);
-            $products = Product::with(['supplier', 'category'])->get();
-            
+
+            $query = Product::with(['supplier', 'category']);
+
+            // Server-side search across the key identifier fields
+            if ($search = trim((string) $request->query('search', ''))) {
+                $query->where(function ($q) use ($search) {
+                    $q->where('prod_name', 'like', "%{$search}%")
+                      ->orWhere('prod_serial_num', 'like', "%{$search}%")
+                      ->orWhere('prod_model_number', 'like', "%{$search}%")
+                      ->orWhere('prod_tag_number', 'like', "%{$search}%");
+                });
+            }
+
+            // Server-side sort (whitelisted columns only)
+            $sortable = [
+                'prod_name', 'prod_serial_num', 'prod_model_number',
+                'prod_quantity', 'prod_cost', 'prod_condition',
+                'prod_current_status', 'created_at',
+            ];
+            $sortBy  = in_array($request->query('sort_by'), $sortable, true) ? $request->query('sort_by') : 'created_at';
+            $sortDir = strtolower((string) $request->query('sort_dir')) === 'asc' ? 'asc' : 'desc';
+            $query->orderBy($sortBy, $sortDir);
+
+            // Paginate when the client asks for it; otherwise return all
+            // (kept for callers like the product pickers in hire/maintenance/disposal).
+            if ($request->has('page') || $request->has('per_page')) {
+                $perPage = min(max((int) $request->query('per_page', 25), 1), 200);
+                $result  = $query->paginate($perPage);
+
+                return response()->json([
+                    'success'      => true,
+                    'data'         => $result->items(),
+                    'total'        => $result->total(),
+                    'per_page'     => $result->perPage(),
+                    'current_page' => $result->currentPage(),
+                    'last_page'    => $result->lastPage(),
+                    'message'      => 'Products retrieved successfully',
+                ]);
+            }
+
             return response()->json([
                 'success' => true,
-                'data' => $products,
-                'message' => 'Products retrieved successfully'
+                'data'    => $query->get(),
+                'message' => 'Products retrieved successfully',
             ]);
         } catch (\Exception $e) {
             $statusCode = $e instanceof \Illuminate\Auth\Access\AuthorizationException ? 
