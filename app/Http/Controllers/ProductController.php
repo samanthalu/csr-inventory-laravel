@@ -34,7 +34,7 @@ class ProductController extends Controller
     public function getProducts()
     {
         // sleep(5);
-        if (!Gate::allows('read')) {
+        if (!Gate::allows('view_products')) {
             return response()->json(['message' => 'You are not authorized for this activity'], 403);
         }
         
@@ -73,7 +73,7 @@ class ProductController extends Controller
     {
         // sleep(3);
        
-        if (!Gate::allows('read')) {
+        if (!Gate::allows('view_products')) {
             return response()->json(['message' => 'You are not authorized for this activity'], 403);
         }
 
@@ -117,7 +117,7 @@ class ProductController extends Controller
     public function addProduct(Request $request)
     {
         
-        if (!Gate::allows('create')) {
+        if (!Gate::allows('create_products')) {
             return response()->json(['message' => 'You are not authorized for this activity'], 403);
         }
         try {
@@ -186,7 +186,7 @@ class ProductController extends Controller
      */
     public function updateProduct(Request $request)
     {
-        if (!Gate::allows('edit')) {
+        if (!Gate::allows('update_products')) {
             return response()->json(['message' => 'You are not authorized for this activity'], 403);
         }
 
@@ -259,7 +259,7 @@ class ProductController extends Controller
     public function deleteProduct($id)
     {
         
-        if (!Gate::allows('delete')) {
+        if (!Gate::allows('delete_products')) {
             return response()->json(['message' => 'You are not authorized for this activity'], 403);
         }
 
@@ -300,7 +300,7 @@ class ProductController extends Controller
 
     public function trash()
     {
-        if (!Gate::allows('delete')) {
+        if (!Gate::allows('delete_products')) {
             return response()->json(['message' => 'You are not authorized for this activity'], 403);
         }
         $products = Product::onlyTrashed()
@@ -312,7 +312,7 @@ class ProductController extends Controller
 
     public function restore($id)
     {
-        if (!Gate::allows('edit')) {
+        if (!Gate::allows('update_products')) {
             return response()->json(['message' => 'You are not authorized for this activity'], 403);
         }
         $product = Product::onlyTrashed()->findOrFail($id);
@@ -323,7 +323,7 @@ class ProductController extends Controller
 
     public function forceDelete($id)
     {
-        if (!Gate::allows('delete')) {
+        if (!Gate::allows('delete_products')) {
             return response()->json(['message' => 'You are not authorized for this activity'], 403);
         }
         try {

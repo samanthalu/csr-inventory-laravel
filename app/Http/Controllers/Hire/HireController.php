@@ -44,7 +44,7 @@ class HireController extends Controller
 
     public function index()
     {
-        if (!Gate::allows('read')) {
+        if (!Gate::allows('view_hires')) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
         $hires = Hire::with(['staff', 'items.product'])
@@ -57,7 +57,7 @@ class HireController extends Controller
 
     public function show($id)
     {
-        if (!Gate::allows('read')) {
+        if (!Gate::allows('view_hires')) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
         $hire = Hire::with(['staff', 'items.product'])->find($id);

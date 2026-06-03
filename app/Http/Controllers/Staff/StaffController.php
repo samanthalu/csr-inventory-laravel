@@ -16,7 +16,7 @@ class StaffController extends Controller
      */
     public function index(): JsonResponse
     {
-        if (!Gate::allows('read')) {
+        if (!Gate::allows('view_staff')) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
         $staff = Staff::all();
@@ -57,7 +57,7 @@ class StaffController extends Controller
      */
     public function show(Staff $staff): JsonResponse
     {
-        if (!Gate::allows('read')) {
+        if (!Gate::allows('view_staff')) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
         return response()->json([

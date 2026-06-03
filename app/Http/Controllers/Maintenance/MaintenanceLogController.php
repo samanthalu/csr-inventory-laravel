@@ -39,7 +39,7 @@ class MaintenanceLogController extends Controller
 
     public function index(Request $request)
     {
-        if (!Gate::allows('read')) {
+        if (!Gate::allows('view_maintenance')) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
         $query = MaintenanceLog::with('product')->orderBy('created_at', 'desc');
@@ -53,7 +53,7 @@ class MaintenanceLogController extends Controller
 
     public function show($id)
     {
-        if (!Gate::allows('read')) {
+        if (!Gate::allows('view_maintenance')) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
         $log = MaintenanceLog::with('product')->find($id);

@@ -22,7 +22,7 @@ class BorrowerController extends Controller
      */
     public function index()
     {
-        if (!Gate::allows('read')) {
+        if (!Gate::allows('view_products')) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
         // $borrowers = Borrower::with(['borrowedDevices.product'])->get();
@@ -46,7 +46,7 @@ class BorrowerController extends Controller
                     return [
                         'device_id' => $record->sp_prod_id,
                         'device_name' => optional($record->product)->prod_name,
-                        'device_tag' => $record->product->prod_tag_number
+                        'device_tag' => optional($record->product)->prod_tag_number
                     ];
                 }),
             ];
@@ -186,7 +186,7 @@ class BorrowerController extends Controller
                 return [
                     'device_id' => $record->sp_prod_id,
                     'device_name' => optional($record->product)->prod_name,
-                    'device_tag' => $record->product->prod_tag_number
+                    'device_tag' => optional($record->product)->prod_tag_number
                 ];
             }),
         ]);
@@ -212,7 +212,7 @@ class BorrowerController extends Controller
                         return [
                             'device_id' => $record->sp_prod_id,
                             'device_name' => optional($record->product)->prod_name,
-                            'device_tag' => $record->product->prod_tag_number
+                            'device_tag' => optional($record->product)->prod_tag_number
                         ];
                     }),
                 ];
@@ -241,7 +241,7 @@ class BorrowerController extends Controller
                         return [
                             'device_id' => $record->sp_prod_id,
                             'device_name' => optional($record->product)->prod_name,
-                            'device_tag' => $record->product->prod_tag_number
+                            'device_tag' => optional($record->product)->prod_tag_number
                         ];
                     }),
                 ];
@@ -271,7 +271,7 @@ class BorrowerController extends Controller
                         return [
                             'device_id' => $record->sp_prod_id,
                             'device_name' => optional($record->product)->prod_name,
-                            'device_tag' => $record->product->prod_tag_number
+                            'device_tag' => optional($record->product)->prod_tag_number
                         ];
                     }),
                 ];
