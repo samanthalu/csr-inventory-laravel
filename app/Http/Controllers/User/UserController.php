@@ -161,9 +161,13 @@ class UserController extends Controller
         // Check if user exists and the provided password matches the stored hashed password
         if ($user && Hash::check($request->password, $user->password)) {
 
-            if ($user->hasPermission(User::PERMISSION_DELETE)) {
-                
-            } else {
+            // User may confirm a destructive action if they hold any delete_* permission
+            // (or are an admin) — based on Spatie roles/permissions, not the legacy bitfield.
+            $canDelete = $user->hasRole('super-admin')
+                || $user->user_type === User::TYPE_ADMIN
+                || $user->getAllPermissions()->contains(fn ($perm) => str_starts_with($perm->name, 'delete_'));
+
+            if (! $canDelete) {
                 return response()->json([
                     'message' => 'not_permitted',
                 ], 200);

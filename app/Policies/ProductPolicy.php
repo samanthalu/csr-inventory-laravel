@@ -12,7 +12,7 @@ class ProductPolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->hasPermission(User::PERMISSION_READ);
+        return $user->can('view_products');
     }
 
     /**
@@ -20,7 +20,7 @@ class ProductPolicy
      */
     public function view(User $user): bool
     {
-        return $user->hasPermission(User::PERMISSION_READ);
+        return $user->can('view_products');
     }
 
     /**
@@ -28,7 +28,7 @@ class ProductPolicy
      */
     public function create(User $user): bool
     {
-        return $user->hasPermission(User::PERMISSION_CREATE);
+        return $user->can('create_products');
     }
 
     /**
@@ -36,7 +36,7 @@ class ProductPolicy
      */
     public function update(User $user): bool
     {
-        return $user->hasPermission(User::PERMISSION_EDIT);
+        return $user->can('update_products');
     }
 
     /**
@@ -44,6 +44,6 @@ class ProductPolicy
      */
     public function delete(User $user): bool
     {
-        return $user->hasPermission(User::PERMISSION_DELETE);
+        return $user->can('delete_products');
     }
 } 
