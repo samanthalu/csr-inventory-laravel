@@ -138,7 +138,7 @@ class AccessoriesController extends Controller
     // Get all accessories with files
     public function index($productId)
     {
-        if (!Gate::allows('read')) {
+        if (!Gate::allows('view_products')) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
         $accessories = ProductAccessories::where('pa_prod_id', $productId)->get();

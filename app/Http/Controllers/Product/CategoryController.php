@@ -15,7 +15,7 @@ class CategoryController extends Controller
      */
     public function index()
     {
-        if (!Gate::allows('read')) {
+        if (!Gate::allows('view_categories')) {
             return response()->json(['message' => 'You are not authorized for this activity'], 403);
         }
 
@@ -46,7 +46,7 @@ class CategoryController extends Controller
     {
         //
         // sleep(5);
-        if (!Gate::allows('create')) {
+        if (!Gate::allows('create_categories')) {
             return response()->json(['message' => 'You are not authorized for this activity'], 403);
         }
 
@@ -87,7 +87,7 @@ class CategoryController extends Controller
      */
     public function update(Request $request, Category $category)
     {
-        if (!Gate::allows('edit')) {
+        if (!Gate::allows('update_categories')) {
             return response()->json(['message' => 'You are not authorized for this activity'], 403);
         }
 
@@ -112,7 +112,7 @@ class CategoryController extends Controller
      */
     public function destroy(Category $category)
     {
-        if (!Gate::allows('delete')) {
+        if (!Gate::allows('delete_categories')) {
             return response()->json(['message' => 'You are not authorized for this activity'], 403);
         }
 

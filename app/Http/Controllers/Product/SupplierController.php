@@ -18,7 +18,7 @@ class SupplierController extends Controller
     {
         // //
         // sleep(5);
-        if (!Gate::allows('read')) {
+        if (!Gate::allows('view_suppliers')) {
             return response()->json(['message' => 'You are not authorized for this activity'], 403);
         }
 

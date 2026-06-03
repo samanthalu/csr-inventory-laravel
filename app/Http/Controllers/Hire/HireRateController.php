@@ -23,7 +23,7 @@ class HireRateController extends Controller
 
     public function index()
     {
-        if (!Gate::allows('read')) {
+        if (!Gate::allows('view_hires')) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
         $rates = HireRate::with('category')->get()->map(fn($r) => $this->format($r));

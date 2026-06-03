@@ -12,7 +12,7 @@ class SoftwareController extends Controller
 {
     public function index(): JsonResponse
     {
-        if (!Gate::allows('read')) {
+        if (!Gate::allows('view_products')) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
         $softwares = Software::all();
@@ -43,7 +43,7 @@ class SoftwareController extends Controller
 
     public function show(Software $software): JsonResponse
     {
-        if (!Gate::allows('read')) {
+        if (!Gate::allows('view_products')) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
         $software->load('supplier');

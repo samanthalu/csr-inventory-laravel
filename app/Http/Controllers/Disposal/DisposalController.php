@@ -40,7 +40,7 @@ class DisposalController extends Controller
 
     public function index(Request $request)
     {
-        if (!Gate::allows('read')) {
+        if (!Gate::allows('view_disposal')) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
         $query = DisposalRecord::with('product')->orderBy('created_at', 'desc');
@@ -57,7 +57,7 @@ class DisposalController extends Controller
 
     public function show($id)
     {
-        if (!Gate::allows('read')) {
+        if (!Gate::allows('view_disposal')) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
         $rec = DisposalRecord::with('product')->find($id);
