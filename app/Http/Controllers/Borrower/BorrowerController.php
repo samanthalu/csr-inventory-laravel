@@ -46,7 +46,7 @@ class BorrowerController extends Controller
                     return [
                         'device_id' => $record->sp_prod_id,
                         'device_name' => optional($record->product)->prod_name,
-                        'device_tag' => $record->product->prod_tag_number
+                        'device_tag' => optional($record->product)->prod_tag_number
                     ];
                 }),
             ];
