@@ -15,3 +15,6 @@
 
     // Re-auth popup — any authenticated user may verify their own credentials
     Route::post('/auth-user', [UserController::class, 'authUser'])->middleware(['auth:sanctum']);
+
+    // Authenticated user changing their own password
+    Route::post('/change-password', [UserController::class, 'changePassword'])->middleware(['auth:sanctum']);

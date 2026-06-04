@@ -205,5 +205,22 @@ class UserController extends Controller
         return response()->json(['message' => 'user details not found']);
 
     }
-    
+
+    /**
+     * Change the authenticated user's own password.
+     */
+    public function changePassword(Request $request) {
+        $request->validate([
+            'current_password' => ['required', 'current_password'],
+            'password'         => ['required', 'confirmed', Rules\Password::defaults()],
+        ]);
+
+        $user = $request->user();
+        $user->forceFill([
+            'password' => Hash::make($request->string('password')),
+        ])->save();
+
+        return response()->json(['message' => 'Password changed successfully']);
+    }
+
 }
