@@ -22,7 +22,7 @@ class BorrowerController extends Controller
      */
     public function index()
     {
-        if (!Gate::allows('view_products')) {
+        if (!Gate::allows('view_hardware')) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
         // $borrowers = Borrower::with(['borrowedDevices.product'])->get();
@@ -69,7 +69,7 @@ class BorrowerController extends Controller
      */
     public function store(Request $request)
     {
-        if (!Gate::allows('admin-only')) {
+        if (!Gate::allows('create_hardware')) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
         // \Log::info("message", $request->all());
@@ -153,6 +153,9 @@ class BorrowerController extends Controller
      */
     public function update(Request $request, string $id)
     {
+        if (!Gate::allows('update_hardware')) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
         //
     }
 
@@ -161,6 +164,9 @@ class BorrowerController extends Controller
      */
     public function destroy(string $id)
     {
+        if (!Gate::allows('delete_hardware')) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
         //
     }
 

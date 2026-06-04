@@ -16,7 +16,9 @@ class StaffController extends Controller
      */
     public function index(): JsonResponse
     {
-        if (!Gate::allows('view_staff')) {
+        // Hardware-loan creators/editors need the staff list for the borrower
+        // picker even without the broader view_staff permission.
+        if (!Gate::any(['view_staff', 'create_hardware', 'update_hardware'])) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
         $staff = Staff::all();

@@ -18,7 +18,7 @@ class RolesAndPermissionsSeeder extends Seeder
         $resources = [
             'products', 'suppliers', 'categories',
             'hires', 'maintenance', 'disposal',
-            'staff', 'users',
+            'staff', 'users', 'hardware',
         ];
 
         foreach ($resources as $resource) {
@@ -44,6 +44,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'view_hires',       'create_hires',       'update_hires',       'delete_hires',
             'view_maintenance', 'create_maintenance', 'update_maintenance', 'delete_maintenance',
             'view_disposal',    'create_disposal',    'update_disposal',    'delete_disposal',
+            'view_hardware',    'create_hardware',    'update_hardware',    'delete_hardware',
             'view_staff',
             'view_reports',
             'view_audit_log',
@@ -56,6 +57,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'view_hires',    'create_hires',    'update_hires',    'delete_hires',
             'view_maintenance', 'create_maintenance', 'update_maintenance',
             'view_disposal',    'create_disposal',    'update_disposal',
+            'view_hardware',
             'view_staff',
             'view_reports',
         ]);
@@ -66,6 +68,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'view_hires',
             'view_maintenance',
             'view_disposal',
+            'view_hardware',
             'view_reports',
         ]);
 
