@@ -26,12 +26,19 @@ class AccessoriesController extends Controller
             'accessories' => 'array',
             'accessories.*.pa_prod_id' => 'required|exists:products,prod_id',
             'accessories.*.pa_name' => 'required|string|max:255',
-            'accessories.*.pa_serial_number' => 'required|string|max:255|unique:product_accessories,pa_serial_number',
+            'accessories.*.pa_serial_number' => 'nullable|string|max:255|unique:product_accessories,pa_serial_number',
             'accessories.*.pa_qty' => 'required|integer|min:1',
             'accessories.*.pa_color' => 'nullable|string|max:50',
             'accessories.*.pa_desc' => 'nullable|string',
             'files' => 'nullable|array',
             'files.*' => 'file|max:2048|mimes:pdf,doc,docx,xls,xlsx,png,jpeg,jpg',
+        ], [
+            'accessories.*.pa_name.required'           => 'Accessory name is required.',
+            'accessories.*.pa_serial_number.unique'    => 'Serial number already exists.',
+            'accessories.*.pa_serial_number.max'       => 'Serial number must not exceed 255 characters.',
+            'accessories.*.pa_qty.required'            => 'Quantity is required.',
+            'accessories.*.pa_qty.integer'             => 'Quantity must be a whole number.',
+            'accessories.*.pa_qty.min'                 => 'Quantity must be at least 1.',
         ]);
 
         if ($validator->fails()) {
@@ -91,7 +98,7 @@ class AccessoriesController extends Controller
 
         $validator = Validator::make($request->all(), [
             'pa_name' => 'required|string|max:255',
-            'pa_serial_number' => 'required|string|max:255',
+            'pa_serial_number' => 'nullable|string|max:255',
             'pa_qty' => 'required|integer|min:1',
             'pa_color' => 'nullable|string|max:50',
             'pa_desc' => 'nullable|string',
