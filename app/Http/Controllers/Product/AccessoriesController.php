@@ -18,7 +18,7 @@ class AccessoriesController extends Controller
     // Store accessories and files
     public function store(Request $request)
     {
-        if (!Gate::allows('admin-only')) {
+        if (!Gate::allows('create_products')) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
         $validator = Validator::make($request->all(), [
@@ -84,7 +84,7 @@ class AccessoriesController extends Controller
     // Update accessory
     public function update(Request $request, $id)
     {
-        if (!Gate::allows('admin-only')) {
+        if (!Gate::allows('update_products')) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
         $accessory = ProductAccessories::findOrFail($id);
@@ -109,7 +109,7 @@ class AccessoriesController extends Controller
     // Delete accessory and related files
     public function destroy($id)
     {
-        if (!Gate::allows('admin-only')) {
+        if (!Gate::allows('delete_products')) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
         DB::beginTransaction();

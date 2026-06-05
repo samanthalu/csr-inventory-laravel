@@ -22,7 +22,7 @@ class ProductFileController extends Controller {
     // Store new file
     public function store(Request $request, Product $product)
     {
-        if (!Gate::allows('admin-only')) {
+        if (!Gate::allows('create_products')) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
         \Log::info('ReQ ' . $request);
@@ -51,9 +51,9 @@ class ProductFileController extends Controller {
     }
 
     // Delete a file
-    public function destroy($id)
+    public function destroy(Product $product, $id)
     {
-        if (!Gate::allows('admin-only')) {
+        if (!Gate::allows('delete_products')) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
         $prodFile = ProductFiles::findOrFail($id);
