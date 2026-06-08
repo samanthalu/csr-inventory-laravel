@@ -14,7 +14,7 @@ return new class extends Migration
         $perms = collect(['view', 'create', 'update', 'delete'])
             ->map(fn($a) => Permission::firstOrCreate(['name' => "{$a}_fieldwork"]));
 
-        // super-admin gets all via wildcard — just ensure ict and administration get access
+        Role::findByName('super-admin')->givePermissionTo($perms);
         Role::findByName('ict')->givePermissionTo($perms);
         Role::findByName('administration')->givePermissionTo([
             'view_fieldwork', 'create_fieldwork', 'update_fieldwork',
