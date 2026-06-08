@@ -18,7 +18,7 @@ class RolesAndPermissionsSeeder extends Seeder
         $resources = [
             'products', 'suppliers', 'categories',
             'hires', 'maintenance', 'disposal',
-            'staff', 'users', 'hardware',
+            'staff', 'users', 'hardware', 'fieldwork',
         ];
 
         foreach ($resources as $resource) {
@@ -48,6 +48,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'view_staff',
             'view_reports',
             'view_audit_log',
+            'view_fieldwork', 'create_fieldwork', 'update_fieldwork', 'delete_fieldwork',
         ]);
 
         $administration = Role::firstOrCreate(['name' => 'administration']);
@@ -60,6 +61,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'view_hardware',
             'view_staff',
             'view_reports',
+            'view_fieldwork', 'create_fieldwork', 'update_fieldwork',
         ]);
 
         $standard = Role::firstOrCreate(['name' => 'standard']);
@@ -70,6 +72,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'view_disposal',
             'view_hardware',
             'view_reports',
+            'view_fieldwork',
         ]);
 
         // ── Assign roles to existing users based on user_type ───────────────

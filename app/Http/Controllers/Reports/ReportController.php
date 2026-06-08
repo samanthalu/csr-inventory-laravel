@@ -26,7 +26,9 @@ class ReportController extends Controller
         $disposalRecords    = DB::table('disposal_records')->count();
         $valueWrittenOff    = (float) DB::table('disposal_records')->sum('dr_value_at_disposal');
 
-        $staffCount = DB::table('staff')->count();
+        $fieldworkTotal      = DB::table('field_work_sessions')->count();
+        $fieldworkActive     = DB::table('field_work_sessions')->where('fw_status', 'active')->count();
+        $fieldworkUnreturned = DB::table('ra_asset_assignments')->whereNull('raa_date_returned')->count();
 
         return response()->json([
             'data' => [
@@ -50,8 +52,10 @@ class ReportController extends Controller
                     'total'            => $disposalRecords,
                     'value_written_off' => $valueWrittenOff,
                 ],
-                'staff' => [
-                    'total' => $staffCount,
+                'fieldwork' => [
+                    'total'      => $fieldworkTotal,
+                    'active'     => $fieldworkActive,
+                    'unreturned' => $fieldworkUnreturned,
                 ],
             ]
         ]);

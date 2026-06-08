@@ -30,3 +30,4 @@ include 'api/disposal.php';
 include 'api/reports.php';
 include 'api/notifications.php';
 include 'api/audit-logs.php';
+include 'api/fieldwork.php';
