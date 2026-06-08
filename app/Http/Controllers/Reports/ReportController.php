@@ -10,12 +10,12 @@ class ReportController extends Controller
 {
     public function summary()
     {
-        $totalProducts  = DB::table('products')->count();
-        $totalValue     = (float) DB::table('products')->sum('prod_cost');
-        $availableCount = DB::table('products')->where('prod_current_status', 'Available')->count();
-        $hiredOutCount  = DB::table('products')->whereIn('prod_current_status', ['Hired out', 'hired out'])->count();
-        $maintenanceCount = DB::table('products')->where('prod_current_status', 'maintenance')->count();
-        $disposedCount  = DB::table('products')->where('prod_current_status', 'disposed')->count();
+        $totalProducts  = DB::table('products')->whereNull('deleted_at')->count();
+        $totalValue     = (float) DB::table('products')->whereNull('deleted_at')->sum('prod_cost');
+        $availableCount = DB::table('products')->whereNull('deleted_at')->where('prod_current_status', 'Available')->count();
+        $hiredOutCount  = DB::table('products')->whereNull('deleted_at')->whereIn('prod_current_status', ['Hired out', 'hired out'])->count();
+        $maintenanceCount = DB::table('products')->whereNull('deleted_at')->where('prod_current_status', 'maintenance')->count();
+        $disposedCount  = DB::table('products')->whereNull('deleted_at')->where('prod_current_status', 'disposed')->count();
 
         $activeHires    = DB::table('hires')->where('hire_status', 'active')->count();
         $totalHires     = DB::table('hires')->count();
@@ -64,6 +64,7 @@ class ReportController extends Controller
     public function assets()
     {
         $byStatus = DB::table('products')
+            ->whereNull('deleted_at')
             ->select('prod_current_status as status', DB::raw('count(*) as count'), DB::raw('sum(prod_cost) as total_value'))
             ->groupBy('prod_current_status')
             ->orderByDesc('count')
@@ -75,6 +76,7 @@ class ReportController extends Controller
             ]);
 
         $byCondition = DB::table('products')
+            ->whereNull('deleted_at')
             ->select('prod_condition as condition', DB::raw('count(*) as count'))
             ->groupBy('prod_condition')
             ->orderByDesc('count')
@@ -82,6 +84,7 @@ class ReportController extends Controller
             ->map(fn($r) => ['condition' => $r->condition, 'count' => (int) $r->count]);
 
         $byCategory = DB::table('products')
+            ->whereNull('deleted_at')
             ->join('category', 'products.cat_id', '=', 'category.cat_id')
             ->select('category.cat_name as category', DB::raw('count(*) as count'), DB::raw('sum(prod_cost) as total_value'))
             ->groupBy('category.cat_name')
@@ -94,6 +97,7 @@ class ReportController extends Controller
             ]);
 
         $recentlyAdded = DB::table('products')
+            ->whereNull('deleted_at')
             ->select('prod_name', 'prod_tag_number', 'prod_cost', 'prod_current_status', 'created_at')
             ->orderByDesc('created_at')
             ->limit(10)
@@ -202,6 +206,7 @@ class ReportController extends Controller
         $hirePeriodActive = $hireMonth || $hireYear;
 
         $query = DB::table('products')
+            ->whereNull('products.deleted_at')
             ->leftJoin('category', 'products.cat_id', '=', 'category.cat_id')
             ->select(
                 'products.prod_id',
