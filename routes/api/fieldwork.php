@@ -17,6 +17,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/fieldwork/{sessionId}/assistants',              [ResearchAssistantController::class, 'store']);
     Route::post('/fieldwork/{sessionId}/assistants/bulk',         [ResearchAssistantController::class, 'bulkStore']);
     Route::put('/fieldwork/{sessionId}/assistants/{id}',          [ResearchAssistantController::class, 'update']);
+    Route::delete('/fieldwork/{sessionId}/assistants/bulk',        [ResearchAssistantController::class, 'bulkDestroy']);
     Route::delete('/fieldwork/{sessionId}/assistants/{id}',       [ResearchAssistantController::class, 'destroy']);
 
     // Asset assignments (scoped to session)

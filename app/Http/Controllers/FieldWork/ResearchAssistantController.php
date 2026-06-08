@@ -87,6 +87,33 @@ class ResearchAssistantController extends Controller
         return response()->json(['data' => $ra]);
     }
 
+    public function bulkDestroy(Request $request, $sessionId)
+    {
+        if (!Gate::allows('delete_fieldwork')) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        $request->validate([
+            'ids'   => 'required|array|min:1',
+            'ids.*' => 'integer',
+        ]);
+
+        $ras = ResearchAssistant::where('ra_fw_session_id', $sessionId)
+            ->whereIn('id', $request->ids)
+            ->get();
+
+        $deleted = $ras->count();
+        $names   = $ras->pluck('ra_name')->all();
+
+        ResearchAssistant::where('ra_fw_session_id', $sessionId)
+            ->whereIn('id', $request->ids)
+            ->delete();
+
+        AuditLogger::log('fieldwork', 'ra_bulk_deleted', "{$deleted} research assistant(s) removed from session #{$sessionId}", $sessionId, null, ['session_id' => $sessionId, 'count' => $deleted, 'names' => $names]);
+
+        return response()->json(['deleted' => $deleted]);
+    }
+
     public function destroy($sessionId, $id)
     {
         if (!Gate::allows('delete_fieldwork')) {
