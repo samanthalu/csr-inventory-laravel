@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\DB;
 use App\Models\ProductAccessories;
 use App\Models\ProductFiles;
 use App\Models\Product;
+use App\Services\AuditLogger;
 
 class ProductFileController extends Controller {
     // Get all files for a product
@@ -47,6 +48,8 @@ class ProductFileController extends Controller {
             'pf_prod_id' => $product->prod_id,
         ]);
 
+        AuditLogger::log('product_file', 'uploaded', "File '{$file->getClientOriginalName()}' uploaded to product '{$product->prod_name}'", $product->prod_id, null, ['file_name' => $file->getClientOriginalName(), 'file_size' => $file->getSize()]);
+
         return response()->json($savedFile, 201);
     }
 
@@ -62,9 +65,10 @@ class ProductFileController extends Controller {
             str_replace('/storage/', '', $prodFile->pf_file_path)
         );
         }
-        
+
+        AuditLogger::log('product_file', 'deleted', "File '{$prodFile->pf_file_name}' deleted from product '{$product->prod_name}'", $product->prod_id);
         $prodFile->delete();
-        
+
         return response()->noContent();
     }
 }

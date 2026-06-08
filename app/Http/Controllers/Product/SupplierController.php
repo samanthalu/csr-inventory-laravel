@@ -8,6 +8,7 @@ use App\Models\Supplier;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
+use App\Services\AuditLogger;
 
 class SupplierController extends Controller
 {
@@ -66,7 +67,8 @@ class SupplierController extends Controller
         // Create and save the supplier
         $supplier = Supplier::create($validatedData);
 
-        // Return response
+        AuditLogger::log('supplier', 'created', "Supplier '{$supplier->sup_name}' created", $supplier->sup_id, null, $supplier->toArray());
+
         return response()->json([
             'message' => 'Supplier created successfully!',
             'supplier' => $supplier
@@ -130,6 +132,8 @@ class SupplierController extends Controller
 
         $supplier->update($validatedData);
 
+        AuditLogger::log('supplier', 'updated', "Supplier '{$supplier->sup_name}' updated", $supplier->sup_id, null, $supplier->toArray());
+
         return response()->json([
             'message' => 'Supplier updated successfully.',
             'data' => $supplier
@@ -148,6 +152,7 @@ class SupplierController extends Controller
         }
 
         $supplier = Supplier::findOrFail($id);
+        AuditLogger::log('supplier', 'deleted', "Supplier '{$supplier->sup_name}' deleted", $supplier->sup_id);
         $supplier->delete();
 
         return response()->json(['message' => 'Supplier deleted successfully']);

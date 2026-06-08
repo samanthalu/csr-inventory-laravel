@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Gate;
+use App\Services\AuditLogger;
 
 class SoftwareController extends Controller
 {
@@ -38,6 +39,7 @@ class SoftwareController extends Controller
         ]);
 
         $software = Software::create($validated);
+        AuditLogger::log('software', 'created', "Software '{$software->soft_name}' created", $software->id, null, $software->toArray());
         return response()->json(['data' => $software, 'message' => 'Software created successfully'], 201);
     }
 
@@ -69,6 +71,7 @@ class SoftwareController extends Controller
         ]);
 
         $software->update($validated);
+        AuditLogger::log('software', 'updated', "Software '{$software->soft_name}' updated", $software->id, null, $software->toArray());
         return response()->json(['data' => $software, 'message' => 'Software updated successfully'], 200);
     }
 
@@ -77,6 +80,7 @@ class SoftwareController extends Controller
         if (!Gate::allows('admin-only')) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
+        AuditLogger::log('software', 'deleted', "Software '{$software->soft_name}' deleted", $software->id);
         $software->delete();
         return response()->json(['message' => 'Software deleted successfully'], 204);
     }

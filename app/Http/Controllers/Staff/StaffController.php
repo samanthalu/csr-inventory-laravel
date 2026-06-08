@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Gate;
+use App\Services\AuditLogger;
 
 class StaffController extends Controller
 {
@@ -46,6 +47,8 @@ class StaffController extends Controller
         ]);
 
         $staff = Staff::create($validated);
+
+        AuditLogger::log('staff', 'created', "Staff '{$staff->staff_first_name} {$staff->staff_last_name}' created", $staff->staff_id, null, $staff->toArray());
 
         return response()->json([
             'status' => 'success',
@@ -87,6 +90,8 @@ class StaffController extends Controller
 
         $staff->update($validated);
 
+        AuditLogger::log('staff', 'updated', "Staff '{$staff->staff_first_name} {$staff->staff_last_name}' updated", $staff->staff_id, null, $staff->toArray());
+
         return response()->json([
             'status' => 'success',
             'message' => 'Staff updated successfully',
@@ -102,6 +107,7 @@ class StaffController extends Controller
         if (!Gate::allows('admin-only')) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
+        AuditLogger::log('staff', 'deleted', "Staff '{$staff->staff_first_name} {$staff->staff_last_name}' deleted", $staff->staff_id);
         $staff->delete();
 
         return response()->json([

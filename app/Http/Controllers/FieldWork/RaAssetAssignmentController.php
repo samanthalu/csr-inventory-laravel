@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\RaAssetAssignment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
+use App\Services\AuditLogger;
 
 class RaAssetAssignmentController extends Controller
 {
@@ -26,8 +27,11 @@ class RaAssetAssignmentController extends Controller
 
         $data['raa_session_id'] = $sessionId;
         $assignment = RaAssetAssignment::create($data);
+        $assignment->load('product:prod_id,prod_name,prod_tag_number');
 
-        return response()->json(['data' => $assignment->load('product:prod_id,prod_name,prod_tag_number')], 201);
+        AuditLogger::log('fieldwork', 'asset_assigned', "Asset '{$assignment->product?->prod_name}' assigned to RA in session #{$sessionId}", $assignment->id, null, ['session_id' => $sessionId, 'product_id' => $assignment->raa_product_id, 'date_out' => $assignment->raa_date_out]);
+
+        return response()->json(['data' => $assignment], 201);
     }
 
     public function return(Request $request, $sessionId, $id)
@@ -45,8 +49,11 @@ class RaAssetAssignmentController extends Controller
         ]);
 
         $assignment->update($data);
+        $assignment->load('product:prod_id,prod_name,prod_tag_number');
 
-        return response()->json(['data' => $assignment->load('product:prod_id,prod_name,prod_tag_number')]);
+        AuditLogger::log('fieldwork', 'asset_returned', "Asset '{$assignment->product?->prod_name}' returned in session #{$sessionId}", $assignment->id, null, ['session_id' => $sessionId, 'date_returned' => $assignment->raa_date_returned, 'condition_in' => $assignment->raa_condition_in]);
+
+        return response()->json(['data' => $assignment]);
     }
 
     public function destroy($sessionId, $id)
@@ -55,7 +62,9 @@ class RaAssetAssignmentController extends Controller
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
-        RaAssetAssignment::where('raa_session_id', $sessionId)->findOrFail($id)->delete();
+        $assignment = RaAssetAssignment::where('raa_session_id', $sessionId)->findOrFail($id);
+        AuditLogger::log('fieldwork', 'assignment_deleted', "Asset assignment #{$id} deleted from session #{$sessionId}", $id);
+        $assignment->delete();
 
         return response()->noContent();
     }

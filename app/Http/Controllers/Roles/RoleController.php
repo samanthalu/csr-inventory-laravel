@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\Models\Permission;
 use App\Models\User;
+use App\Services\AuditLogger;
 
 class RoleController extends Controller
 {
@@ -52,6 +53,8 @@ class RoleController extends Controller
             $role->syncPermissions($request->permissions);
         }
 
+        AuditLogger::log('role', 'created', "Role '{$role->name}' created", $role->id, null, ['name' => $role->name, 'permissions' => $role->permissions->pluck('name')->all()]);
+
         return response()->json([
             'message' => 'Role created successfully.',
             'data'    => [
@@ -89,6 +92,8 @@ class RoleController extends Controller
 
         $role->load('permissions');
 
+        AuditLogger::log('role', 'updated', "Role '{$role->name}' updated", $role->id, null, ['name' => $role->name, 'permissions' => $role->permissions->pluck('name')->all()]);
+
         return response()->json([
             'message' => 'Role updated successfully.',
             'data'    => [
@@ -109,6 +114,7 @@ class RoleController extends Controller
             return response()->json(['message' => "The '{$role->name}' role cannot be deleted."], 403);
         }
 
+        AuditLogger::log('role', 'deleted', "Role '{$role->name}' deleted", $role->id);
         $role->delete();
         return response()->json(['message' => 'Role deleted successfully.']);
     }
@@ -135,6 +141,8 @@ class RoleController extends Controller
 
         $user = User::findOrFail($userId);
         $user->syncRoles($request->roles);
+
+        AuditLogger::log('role', 'assigned', "Roles for user '{$user->name}' updated", $user->id, null, ['roles' => $request->roles]);
 
         return response()->json(['message' => 'Roles assigned successfully.']);
     }

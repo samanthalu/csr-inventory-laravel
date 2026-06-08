@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
 use App\Models\ProductAccessories;
 use App\Models\ProductFiles;
-
+use App\Services\AuditLogger;
 
 class AccessoriesController extends Controller
 {
@@ -77,6 +77,8 @@ class AccessoriesController extends Controller
 
             DB::commit();
 
+            AuditLogger::log('accessory', 'created', count($accessories) . " accessory(s) added to product #{$request->product_id}", (int) $request->product_id, null, ['count' => count($accessories)]);
+
             return response()->json([
                 'message' => 'Accessories and files created successfully',
                 'data' => $accessories
@@ -110,6 +112,8 @@ class AccessoriesController extends Controller
 
         $accessory->update($request->all());
 
+        AuditLogger::log('accessory', 'updated', "Accessory '{$accessory->pa_name}' updated", $accessory->id, null, $accessory->toArray());
+
         return response()->json(['message' => 'Accessory updated successfully', 'data' => $accessory]);
     }
 
@@ -123,12 +127,8 @@ class AccessoriesController extends Controller
 
         try {
             $accessory = ProductAccessories::findOrFail($id);
-            
-            // Delete related files
-            // ProductFiles::where('product_id', $accessory->product_id)->each(function($file) {
-            //     Storage::disk('public')->delete($file->pf_file_path);
-            //     $file->delete();
-            // });
+
+            AuditLogger::log('accessory', 'deleted', "Accessory '{$accessory->pa_name}' deleted from product #{$accessory->pa_prod_id}", $accessory->id);
 
             $accessory->delete();
 

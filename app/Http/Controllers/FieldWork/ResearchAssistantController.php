@@ -7,6 +7,7 @@ use App\Models\ResearchAssistant;
 use App\Models\FieldWorkSession;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
+use App\Services\AuditLogger;
 
 class ResearchAssistantController extends Controller
 {
@@ -29,6 +30,8 @@ class ResearchAssistantController extends Controller
 
         $data['ra_fw_session_id'] = $session->id;
         $ra = ResearchAssistant::create($data);
+
+        AuditLogger::log('fieldwork', 'ra_added', "Research assistant '{$ra->ra_name}' added to session #{$session->id}", $ra->id, null, ['session_id' => $session->id, 'name' => $ra->ra_name]);
 
         return response()->json(['data' => $ra], 201);
     }
@@ -55,6 +58,8 @@ class ResearchAssistantController extends Controller
             return ResearchAssistant::create(array_merge($row, ['ra_fw_session_id' => $session->id]));
         });
 
+        AuditLogger::log('fieldwork', 'ra_bulk_added', "{$created->count()} research assistant(s) added to session #{$session->id}", $session->id, null, ['session_id' => $session->id, 'count' => $created->count(), 'names' => $created->pluck('ra_name')->all()]);
+
         return response()->json(['data' => $created, 'count' => $created->count()], 201);
     }
 
@@ -77,6 +82,8 @@ class ResearchAssistantController extends Controller
 
         $ra->update($data);
 
+        AuditLogger::log('fieldwork', 'ra_updated', "Research assistant '{$ra->ra_name}' updated in session #{$sessionId}", $ra->id, null, $data);
+
         return response()->json(['data' => $ra]);
     }
 
@@ -86,7 +93,9 @@ class ResearchAssistantController extends Controller
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
-        ResearchAssistant::where('ra_fw_session_id', $sessionId)->findOrFail($id)->delete();
+        $ra = ResearchAssistant::where('ra_fw_session_id', $sessionId)->findOrFail($id);
+        AuditLogger::log('fieldwork', 'ra_deleted', "Research assistant '{$ra->ra_name}' removed from session #{$sessionId}", $ra->id);
+        $ra->delete();
 
         return response()->noContent();
     }

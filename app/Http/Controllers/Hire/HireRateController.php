@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\HireRate;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
+use App\Services\AuditLogger;
 
 class HireRateController extends Controller
 {
@@ -51,6 +52,8 @@ class HireRateController extends Controller
 
         $rate->load('category');
 
+        AuditLogger::log('hire_rate', 'created', "Hire rate created for category '{$rate->category?->cat_name}'", $rate->hr_id, null, $this->format($rate));
+
         return response()->json([
             'message' => 'Hire rate created successfully',
             'data'    => $this->format($rate),
@@ -81,6 +84,8 @@ class HireRateController extends Controller
 
         $rate->load('category');
 
+        AuditLogger::log('hire_rate', 'updated', "Hire rate for category '{$rate->category?->cat_name}' updated", $rate->hr_id, null, $this->format($rate));
+
         return response()->json([
             'message' => 'Hire rate updated successfully',
             'data'    => $this->format($rate),
@@ -97,6 +102,7 @@ class HireRateController extends Controller
             return response()->json(['message' => 'Hire rate not found'], 404);
         }
 
+        AuditLogger::log('hire_rate', 'deleted', "Hire rate for category '{$rate->category?->cat_name}' deleted", $rate->hr_id);
         $rate->delete();
         return response()->json(['message' => 'Hire rate deleted successfully']);
     }

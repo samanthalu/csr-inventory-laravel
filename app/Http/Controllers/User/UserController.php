@@ -12,6 +12,7 @@ use App\Models\UserRoles;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
+use App\Services\AuditLogger;
 
 class UserController extends Controller
 {
@@ -64,6 +65,8 @@ class UserController extends Controller
         // $user_roles->role_delete = $request->role_delete;
 
         // $user_roles->save();
+
+        AuditLogger::log('user', 'created', "User '{$user->name}' ({$user->email}) created", $user->id, null, ['name' => $user->name, 'email' => $user->email, 'user_type' => $user->user_type]);
 
         return response()->json(['message' => 'User created successfully', 'user' => ['id' => $user->id]]);
 
@@ -138,8 +141,8 @@ class UserController extends Controller
             // }
 
            if($user->update()) {
-
                 $message='success';
+                AuditLogger::log('user', 'updated', "User '{$user->name}' ({$user->email}) updated", $user->id, null, ['name' => $user->name, 'email' => $user->email, 'user_type' => $user->user_type]);
            }
 
            return response()->json(['message' => $message]);
@@ -197,6 +200,7 @@ class UserController extends Controller
 
         $user = User::find($request->id);
         if($user) {
+            AuditLogger::log('user', 'deleted', "User '{$user->name}' ({$user->email}) deleted", $user->id);
             $user->delete();
 
             return response()->json(['message' => 'success']);
@@ -219,6 +223,8 @@ class UserController extends Controller
         $user->forceFill([
             'password' => Hash::make($request->string('password')),
         ])->save();
+
+        AuditLogger::log('user', 'password_changed', "User '{$user->name}' changed their password", $user->id);
 
         return response()->json(['message' => 'Password changed successfully']);
     }

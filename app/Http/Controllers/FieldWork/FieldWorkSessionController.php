@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\FieldWorkSession;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
+use App\Services\AuditLogger;
 
 class FieldWorkSessionController extends Controller
 {
@@ -42,6 +43,8 @@ class FieldWorkSessionController extends Controller
 
         $data['fw_created_by'] = $request->user()->id;
         $session = FieldWorkSession::create($data);
+
+        AuditLogger::log('fieldwork', 'created', "Field work session '{$session->fw_title}' created", $session->id, null, ['title' => $session->fw_title, 'location' => $session->fw_location, 'start_date' => $session->fw_start_date]);
 
         return response()->json(['data' => $this->format($session->fresh(['createdBy', 'hire']))], 201);
     }
@@ -81,6 +84,8 @@ class FieldWorkSessionController extends Controller
 
         $session->update($data);
 
+        AuditLogger::log('fieldwork', 'updated', "Field work session '{$session->fw_title}' updated", $session->id, null, $data);
+
         return response()->json(['data' => $this->format($session->fresh(['createdBy', 'hire']))]);
     }
 
@@ -90,7 +95,9 @@ class FieldWorkSessionController extends Controller
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
-        FieldWorkSession::findOrFail($id)->delete();
+        $session = FieldWorkSession::findOrFail($id);
+        AuditLogger::log('fieldwork', 'deleted', "Field work session '{$session->fw_title}' deleted", $session->id);
+        $session->delete();
 
         return response()->noContent();
     }

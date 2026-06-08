@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\Category;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Database\QueryException;
+use App\Services\AuditLogger;
 
 class CategoryController extends Controller
 {
@@ -60,6 +61,8 @@ class CategoryController extends Controller
 
         $category = Category::create($validated);
 
+        AuditLogger::log('category', 'created', "Category '{$category->cat_name}' created", $category->cat_id, null, $category->toArray());
+
         return response()->json([
             'message' => 'Category successfully created',
             'data' => $category], 201);
@@ -101,6 +104,8 @@ class CategoryController extends Controller
 
         $category->update($validated);
 
+        AuditLogger::log('category', 'updated', "Category '{$category->cat_name}' updated", $category->cat_id, null, $category->toArray());
+
         return response()->json([
             'message' => 'Category successfully updated',
             'data' => $category
@@ -121,6 +126,7 @@ class CategoryController extends Controller
         // return response()->json(['message' => 'Category deleted successfully']);
 
         try {
+            AuditLogger::log('category', 'deleted', "Category '{$category->cat_name}' deleted", $category->cat_id);
             $category->delete();
 
             return response()->json(['message' => 'Category deleted successfully'], 200);
