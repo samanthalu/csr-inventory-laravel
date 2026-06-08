@@ -57,7 +57,7 @@ class AlertController extends Controller
             ->orderBy('prod_warranty_expire')
             ->get();
 
-        $stolenCount = DB::table('products')->where('prod_current_status', 'Stolen')->count();
+        $stolenCount = DB::table('products')->where('prod_current_status', 'Stolen')->whereNull('deleted_at')->count();
 
         $alerts = [];
 
