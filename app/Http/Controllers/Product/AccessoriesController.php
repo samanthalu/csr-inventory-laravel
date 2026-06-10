@@ -31,7 +31,7 @@ class AccessoriesController extends Controller
             'accessories.*.pa_color' => 'nullable|string|max:50',
             'accessories.*.pa_desc' => 'nullable|string',
             'files' => 'nullable|array',
-            'files.*' => 'file|max:2048|mimes:pdf,doc,docx,xls,xlsx,png,jpeg,jpg',
+            'files.*' => 'file|max:4096|mimes:pdf,doc,docx,xls,xlsx,png,jpeg,jpg',
         ], [
             'accessories.*.pa_name.required'           => 'Accessory name is required.',
             'accessories.*.pa_serial_number.unique'    => 'Serial number already exists.',
