@@ -240,7 +240,7 @@ class ProductController extends Controller
                 'prod_desc' => 'required|string',
                 'prod_cost' => 'required|numeric|min:0',
                 'prod_quantity' => 'required|integer|min:0',
-                'prod_serial_num' => 'required|string|unique:product,prod_serial_num',
+                'prod_serial_num' => "required|string|unique:products,prod_serial_num,{$id},prod_id",
                 'prod_tag_number' => 'nullable|string',
                 'prod_model_number' => 'nullable|string',
                 'prod_batch_number' => 'nullable|string',
