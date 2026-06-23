@@ -25,4 +25,9 @@ class HireItem extends Model
     {
         return $this->belongsTo(Product::class, 'product_id', 'prod_id');
     }
+
+    public function hire()
+    {
+        return $this->belongsTo(Hire::class, 'hire_id', 'id');
+    }
 }

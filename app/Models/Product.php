@@ -84,6 +84,15 @@ class Product extends Model
     }
 
     public function hireItems()     { return $this->hasMany(HireItem::class,      'product_id', 'prod_id'); }
+
+    /** Hire items still out (not returned) on a hire that is currently active/overdue. */
+    public function activeHireItems()
+    {
+        return $this->hireItems()
+            ->where('is_returned', false)
+            ->whereHas('hire', fn ($q) => $q->whereIn('hire_status', ['active', 'overdue']));
+    }
+
     public function maintenanceLogs(){ return $this->hasMany(MaintenanceLog::class, 'product_id', 'prod_id'); }
     public function disposalRecords(){ return $this->hasMany(DisposalRecord::class, 'product_id', 'prod_id'); }
     public function staffProducts() { return $this->hasMany(StaffProduct::class,   'sp_prod_id', 'prod_id'); }

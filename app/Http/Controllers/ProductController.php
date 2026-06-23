@@ -40,7 +40,8 @@ class ProductController extends Controller
         try {
             $this->authorize('viewAny', Product::class);
 
-            $query = Product::with(['supplier', 'category']);
+            $query = Product::with(['supplier', 'category'])
+                ->withExists(['activeHireItems as is_hired_out']);
 
             // Server-side search across the key identifier fields
             if ($search = trim((string) $request->query('search', ''))) {
@@ -115,8 +116,16 @@ class ProductController extends Controller
         }
 
         try {
-            $product = Product::with(['accessories', 'files', 'supplier', 'category', 'assignedUser:id,name,email,user_type'])->findOrFail($id);
+            $product = Product::with(['accessories', 'files', 'supplier', 'category', 'assignedUser:id,name,email,user_type'])
+                ->withExists(['activeHireItems as is_hired_out'])
+                ->findOrFail($id);
             $this->authorize('view', Product::class);
+
+            // Surface the expected return date of the current hire, if any.
+            if ($product->is_hired_out) {
+                $activeItem = $product->activeHireItems()->with('hire:id,hire_return_date')->first();
+                $product->setAttribute('hire_return_date', optional($activeItem?->hire)->hire_return_date);
+            }
 
             return response()->json([
                 'success' => true,
