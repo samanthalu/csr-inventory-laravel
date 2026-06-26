@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Hire;
 use App\Models\HireItem;
 use App\Models\HireRate;
+use App\Models\Product;
 use App\Services\AuditLogger;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -167,6 +168,86 @@ class HireController extends Controller
         $item->update(['is_returned' => true]);
 
         return response()->json(['message' => 'Item marked as returned']);
+    }
+
+    public function addItems(Request $request, $id)
+    {
+        if (!Gate::allows('manage-hire')) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+        $hire = Hire::find($id);
+        if (!$hire) {
+            return response()->json(['message' => 'Hire not found'], 404);
+        }
+
+        $validated = $request->validate([
+            'product_ids'   => 'required|array|min:1',
+            'product_ids.*' => 'required|exists:products,prod_id',
+        ]);
+
+        // Skip products already on this hire to avoid duplicate rows.
+        $existing = $hire->items()->pluck('product_id')->all();
+        $toAdd    = array_values(array_diff(array_unique($validated['product_ids']), $existing));
+
+        if (empty($toAdd)) {
+            return response()->json(['message' => 'Selected assets are already on this hire'], 422);
+        }
+
+        DB::beginTransaction();
+        try {
+            foreach ($toAdd as $productId) {
+                $product = Product::find($productId);
+                $rate    = HireRate::where('hr_item_category', $product->cat_id)->value('hr_rate');
+
+                HireItem::create([
+                    'hire_id'           => $hire->id,
+                    'product_id'        => $productId,
+                    'quantity'          => 1,
+                    'hire_rate_per_day' => $rate,
+                    'is_returned'       => false,
+                ]);
+            }
+            DB::commit();
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['message' => 'Failed to add assets', 'error' => $e->getMessage()], 500);
+        }
+
+        $hire->load(['staff', 'items.product']);
+        AuditLogger::log('hire', 'items_added', count($toAdd) . " asset(s) added to hire #{$id}", (int) $id, null, $this->formatHire($hire));
+
+        return response()->json([
+            'message' => count($toAdd) . ' asset(s) added',
+            'data'    => $this->formatHire($hire),
+        ]);
+    }
+
+    public function removeItem($hireId, $itemId)
+    {
+        if (!Gate::allows('manage-hire')) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+        $hire = Hire::with('items')->find($hireId);
+        if (!$hire) {
+            return response()->json(['message' => 'Hire not found'], 404);
+        }
+        $item = $hire->items->firstWhere('id', (int) $itemId);
+        if (!$item) {
+            return response()->json(['message' => 'Item not found'], 404);
+        }
+        if ($hire->items->count() <= 1) {
+            return response()->json(['message' => 'A hire must have at least one asset. Add another before removing this one.'], 422);
+        }
+
+        $item->delete();
+
+        $hire->load(['staff', 'items.product']);
+        AuditLogger::log('hire', 'item_removed', "Asset removed from hire #{$hireId}", (int) $hireId, null, $this->formatHire($hire));
+
+        return response()->json([
+            'message' => 'Asset removed',
+            'data'    => $this->formatHire($hire),
+        ]);
     }
 
     public function return($id)
