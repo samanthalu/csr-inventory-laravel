@@ -54,6 +54,7 @@ class CategoryController extends Controller
         $validated = $request->validate([
             'cat_name' => 'required|string|max:255|unique:category,cat_name',
             'cat_desc' => 'nullable|string',
+            'cat_show_in_tabs' => 'sometimes|boolean',
             // 'cat_hireable' => 'required|boolean',
             // 'cat_slug' => 'required|string|unique:categories,cat_slug',
             // 'cat_status' => 'required|in:active,inactive',
@@ -97,6 +98,7 @@ class CategoryController extends Controller
         $validated = $request->validate([
             'cat_name' => 'sometimes|required|string|max:255',
             'cat_desc' => 'nullable|string',
+            'cat_show_in_tabs' => 'sometimes|boolean',
             // 'cat_hireable' => 'sometimes|required|boolean',
             // 'cat_slug' => 'sometimes|required|string|unique:categories,cat_slug,' . $category->id,
             // 'cat_status' => 'sometimes|required|in:active,inactive',

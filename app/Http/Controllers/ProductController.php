@@ -40,17 +40,42 @@ class ProductController extends Controller
         try {
             $this->authorize('viewAny', Product::class);
 
+            // Shared search scope so the listing and the tab counts stay in sync.
+            $search = trim((string) $request->query('search', ''));
+            $applySearch = function ($q) use ($search) {
+                if ($search !== '') {
+                    $q->where(function ($w) use ($search) {
+                        $w->where('prod_name', 'like', "%{$search}%")
+                          ->orWhere('prod_serial_num', 'like', "%{$search}%")
+                          ->orWhere('prod_model_number', 'like', "%{$search}%")
+                          ->orWhere('prod_tag_number', 'like', "%{$search}%");
+                    });
+                }
+            };
+
             $query = Product::with(['supplier', 'category'])
                 ->withExists(['activeHireItems as is_hired_out']);
+            $applySearch($query);
 
-            // Server-side search across the key identifier fields
-            if ($search = trim((string) $request->query('search', ''))) {
-                $query->where(function ($q) use ($search) {
-                    $q->where('prod_name', 'like', "%{$search}%")
-                      ->orWhere('prod_serial_num', 'like', "%{$search}%")
-                      ->orWhere('prod_model_number', 'like', "%{$search}%")
-                      ->orWhere('prod_tag_number', 'like', "%{$search}%");
-                });
+            $paginating = $request->has('page') || $request->has('per_page');
+
+            // Per-category counts for the listing tabs — reflect the active search
+            // but NOT the category filter, so every tab shows its own total. Built
+            // from a clean query (no eager loads) to keep the GROUP BY valid.
+            $categoryCounts = null;
+            $allCount       = null;
+            if ($paginating) {
+                $categoryCounts = Product::query()
+                    ->tap($applySearch)
+                    ->selectRaw('cat_id, COUNT(*) as aggregate')
+                    ->groupBy('cat_id')
+                    ->pluck('aggregate', 'cat_id');
+                $allCount = (int) $categoryCounts->sum();
+            }
+
+            // Server-side category filter (cat_id)
+            if ($category = (int) $request->query('category', 0)) {
+                $query->where('cat_id', $category);
             }
 
             // Server-side sort (whitelisted columns only)
@@ -65,18 +90,20 @@ class ProductController extends Controller
 
             // Paginate when the client asks for it; otherwise return all
             // (kept for callers like the product pickers in hire/maintenance/disposal).
-            if ($request->has('page') || $request->has('per_page')) {
+            if ($paginating) {
                 $perPage = min(max((int) $request->query('per_page', 25), 1), 200);
                 $result  = $query->paginate($perPage);
 
                 return response()->json([
-                    'success'      => true,
-                    'data'         => $result->items(),
-                    'total'        => $result->total(),
-                    'per_page'     => $result->perPage(),
-                    'current_page' => $result->currentPage(),
-                    'last_page'    => $result->lastPage(),
-                    'message'      => 'Products retrieved successfully',
+                    'success'         => true,
+                    'data'            => $result->items(),
+                    'total'           => $result->total(),
+                    'per_page'        => $result->perPage(),
+                    'current_page'    => $result->currentPage(),
+                    'last_page'       => $result->lastPage(),
+                    'category_counts' => $categoryCounts,
+                    'all_count'       => $allCount,
+                    'message'         => 'Products retrieved successfully',
                 ]);
             }
 

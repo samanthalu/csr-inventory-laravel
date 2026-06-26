@@ -15,9 +15,14 @@ class Category extends Model
     protected $fillable = [
         'cat_name',
         'cat_desc',
+        'cat_show_in_tabs',
         // 'cat_hireable',
         // 'cat_slug',
         // 'cat_status',
+    ];
+
+    protected $casts = [
+        'cat_show_in_tabs' => 'boolean',
     ];
 
     public function product()
