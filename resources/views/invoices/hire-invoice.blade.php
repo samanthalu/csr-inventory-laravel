@@ -10,6 +10,9 @@
 
   /* Header */
   .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 36px; }
+  .brand { border-collapse: collapse; }
+  .brand td { vertical-align: middle; }
+  .logo { height: 56px; width: auto; padding-right: 14px; }
   .org-name { font-size: 22px; font-weight: 700; color: #1e3a5f; letter-spacing: -0.5px; }
   .org-sub  { font-size: 11px; color: #64748b; margin-top: 3px; }
   .invoice-meta { text-align: right; }
@@ -66,11 +69,27 @@
 <body>
 <div class="page">
 
+  @php
+    $logoPath = public_path('images/unima-logo-bw.png');
+    $logoData = is_file($logoPath)
+        ? 'data:image/png;base64,'.base64_encode(file_get_contents($logoPath))
+        : null;
+  @endphp
+
   <!-- Header -->
   <div class="header">
     <div>
-      <div class="org-name">CSR Inventory System</div>
-      <div class="org-sub">Equipment Hire Management</div>
+      <table class="brand">
+        <tr>
+          @if($logoData)
+            <td><img src="{{ $logoData }}" class="logo" alt="University of Malawi"></td>
+          @endif
+          <td>
+            <div class="org-name">Center for Social Research</div>
+            <div class="org-sub">Equipment Hire Management</div>
+          </td>
+        </tr>
+      </table>
     </div>
     <div class="invoice-meta">
       <div class="invoice-title">INVOICE</div>

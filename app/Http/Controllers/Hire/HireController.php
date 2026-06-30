@@ -43,17 +43,68 @@ class HireController extends Controller
         ];
     }
 
-    public function index()
+    public function index(Request $request)
     {
         if (!Gate::allows('view_hires')) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
-        $hires = Hire::with(['staff', 'items.product'])
-            ->orderBy('created_at', 'desc')
-            ->get()
-            ->map(fn($h) => $this->formatHire($h));
 
-        return response()->json(['data' => $hires]);
+        $perPage = max(1, min((int) $request->input('per_page', 10), 100));
+        $search  = trim((string) $request->input('search', ''));
+        $status  = $request->input('status', 'all');
+        $today   = Carbon::today()->toDateString();
+
+        // Base query with the search term applied (shared by counts and the page).
+        $base = Hire::query()->when($search !== '', function ($q) use ($search) {
+            $q->where(function ($q) use ($search) {
+                $q->whereHas('staff', function ($s) use ($search) {
+                    $s->where('staff_first_name', 'like', "%{$search}%")
+                      ->orWhere('staff_last_name', 'like', "%{$search}%")
+                      ->orWhereRaw("CONCAT(staff_first_name, ' ', staff_last_name) LIKE ?", ["%{$search}%"]);
+                })
+                ->orWhere('hire_purpose', 'like', "%{$search}%");
+
+                $idSearch = ltrim($search, '#');
+                if (is_numeric($idSearch)) {
+                    $q->orWhere('id', (int) $idSearch);
+                }
+            });
+        });
+
+        // Summary counts (respect search, ignore the selected status). Overdue is derived.
+        $counts = [
+            'all'      => (clone $base)->count(),
+            'returned' => (clone $base)->where('hire_status', 'returned')->count(),
+            'overdue'  => (clone $base)->where('hire_status', '!=', 'returned')
+                                       ->whereDate('hire_return_date', '<', $today)->count(),
+            'active'   => (clone $base)->where('hire_status', '!=', 'returned')
+                                       ->whereDate('hire_return_date', '>=', $today)->count(),
+        ];
+
+        // Page query: apply the status filter, eager-load and order.
+        $query = (clone $base)->with(['staff', 'items.product'])->orderBy('created_at', 'desc');
+        if ($status === 'returned') {
+            $query->where('hire_status', 'returned');
+        } elseif ($status === 'overdue') {
+            $query->where('hire_status', '!=', 'returned')->whereDate('hire_return_date', '<', $today);
+        } elseif ($status === 'active') {
+            $query->where('hire_status', '!=', 'returned')->whereDate('hire_return_date', '>=', $today);
+        }
+
+        $page = $query->paginate($perPage);
+
+        return response()->json([
+            'data'   => collect($page->items())->map(fn($h) => $this->formatHire($h))->values(),
+            'meta'   => [
+                'current_page' => $page->currentPage(),
+                'last_page'    => $page->lastPage(),
+                'per_page'     => $page->perPage(),
+                'total'        => $page->total(),
+                'from'         => $page->firstItem(),
+                'to'           => $page->lastItem(),
+            ],
+            'counts' => $counts,
+        ]);
     }
 
     public function show($id)

@@ -6,7 +6,9 @@ use Illuminate\Database\Eloquent\Model;
 
 class Invoice extends Model
 {
-    protected $fillable = ['hire_id', 'invoice_number', 'file_path', 'total_amount'];
+    protected $fillable = ['hire_id', 'invoice_number', 'file_path', 'total_amount', 'emailed_at', 'emailed_to'];
+
+    protected $casts = ['emailed_at' => 'datetime'];
 
     public function hire()
     {

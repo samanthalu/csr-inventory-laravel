@@ -37,7 +37,7 @@ class HireRateController extends Controller
             return response()->json(['message' => 'Unauthorized'], 403);
         }
         $validated = $request->validate([
-            'cat_id'         => 'required|integer|exists:categories,cat_id|unique:hire_rates,hr_item_category',
+            'cat_id'         => 'required|integer|exists:category,cat_id|unique:hire_rates,hr_item_category',
             'rate_per_day'   => 'required|numeric|min:0',
             'rate_per_week'  => 'nullable|numeric|min:0',
             'rate_per_month' => 'nullable|numeric|min:0',

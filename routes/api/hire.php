@@ -33,6 +33,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Invoices
     Route::get('/invoices',                        [InvoiceController::class, 'index']);
     Route::post('/hires/{hireId}/invoice',         [InvoiceController::class, 'generate']);
+    Route::post('/invoices/{id}/email',            [InvoiceController::class, 'email']);
     Route::delete('/invoices/{id}',                [InvoiceController::class, 'destroy']);
 });
 
