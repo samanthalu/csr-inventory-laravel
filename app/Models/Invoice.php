@@ -14,4 +14,9 @@ class Invoice extends Model
     {
         return $this->belongsTo(Hire::class, 'hire_id');
     }
+
+    public function items()
+    {
+        return $this->hasMany(InvoiceItem::class, 'invoice_id');
+    }
 }

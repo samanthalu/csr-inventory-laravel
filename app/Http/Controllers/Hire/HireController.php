@@ -33,6 +33,8 @@ class HireController extends Controller
                 'quantity'          => $item->quantity,
                 'hire_rate_per_day' => $item->hire_rate_per_day,
                 'is_returned'       => (bool) $item->is_returned,
+                'returned_at'       => $item->returned_at,
+                'is_invoiced'       => $item->relationLoaded('invoiceItem') ? (bool) $item->invoiceItem : $item->invoiceItem()->exists(),
                 'product'           => $item->product ? [
                     'id'        => $item->product->prod_id,
                     'prod_name' => $item->product->prod_name,
@@ -82,7 +84,7 @@ class HireController extends Controller
         ];
 
         // Page query: apply the status filter, eager-load and order.
-        $query = (clone $base)->with(['staff', 'items.product'])->orderBy('created_at', 'desc');
+        $query = (clone $base)->with(['staff', 'items.product', 'items.invoiceItem'])->orderBy('created_at', 'desc');
         if ($status === 'returned') {
             $query->where('hire_status', 'returned');
         } elseif ($status === 'overdue') {
@@ -216,9 +218,39 @@ class HireController extends Controller
             return response()->json(['message' => 'Item not found'], 404);
         }
 
-        $item->update(['is_returned' => true]);
+        $item->update(['is_returned' => true, 'returned_at' => now()]);
 
         return response()->json(['message' => 'Item marked as returned']);
+    }
+
+    public function unreturnItem($hireId, $itemId)
+    {
+        if (!Gate::allows('manage-hire')) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+        $item = HireItem::where('hire_id', $hireId)->where('id', $itemId)->first();
+        if (!$item) {
+            return response()->json(['message' => 'Item not found'], 404);
+        }
+
+        if ($item->invoiceItem()->exists()) {
+            return response()->json(['message' => 'Cannot unreturn an item that has already been invoiced.'], 422);
+        }
+
+        $item->update(['is_returned' => false, 'returned_at' => null]);
+
+        // If the hire was fully returned, an item coming back out reopens it.
+        $hire = Hire::find($hireId);
+        if ($hire && $hire->hire_status === 'returned') {
+            $hire->update(['hire_status' => 'active']);
+        }
+
+        AuditLogger::log('hire', 'item_unreturned', "Item #{$itemId} on hire #{$hireId} marked as not returned", (int) $hireId);
+
+        return response()->json([
+            'message'     => 'Item marked as not returned',
+            'hire_status' => $hire?->hire_status,
+        ]);
     }
 
     public function addItems(Request $request, $id)
@@ -312,6 +344,8 @@ class HireController extends Controller
         }
 
         $hire->update(['hire_status' => 'returned']);
+        $hire->items()->whereNull('returned_at')->update(['returned_at' => now()]);
+        $hire->items()->update(['is_returned' => true]);
 
         AuditLogger::log('hire', 'returned', "Hire #{$id} marked as returned", (int) $id);
 

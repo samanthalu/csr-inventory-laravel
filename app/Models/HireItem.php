@@ -15,10 +15,12 @@ class HireItem extends Model
         'quantity',
         'hire_rate_per_day',
         'is_returned',
+        'returned_at',
     ];
 
     protected $casts = [
         'is_returned' => 'boolean',
+        'returned_at' => 'datetime',
     ];
 
     public function product()
@@ -29,5 +31,10 @@ class HireItem extends Model
     public function hire()
     {
         return $this->belongsTo(Hire::class, 'hire_id', 'id');
+    }
+
+    public function invoiceItem()
+    {
+        return $this->hasOne(InvoiceItem::class, 'hire_item_id');
     }
 }

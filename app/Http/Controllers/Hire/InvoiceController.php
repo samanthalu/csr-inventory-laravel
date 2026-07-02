@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Mail\HireInvoiceMail;
 use App\Models\Hire;
 use App\Models\Invoice;
+use App\Models\InvoiceItem;
 use App\Services\AuditLogger;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
@@ -17,12 +18,6 @@ use Illuminate\Support\Facades\Storage;
 
 class InvoiceController extends Controller
 {
-    private function calcTotal(Hire $hire): float
-    {
-        $days = max(1, Carbon::parse($hire->hire_date)->diffInDays(Carbon::parse($hire->hire_return_date)));
-        return $hire->items->sum(fn($item) => ($item->hire_rate_per_day ?? 0) * $item->quantity * $days);
-    }
-
     public function index()
     {
         if (!Gate::allows('manage-invoices')) {
@@ -41,87 +36,107 @@ class InvoiceController extends Controller
         if (!Gate::allows('manage-invoices')) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
-        $hire = Hire::with(['staff', 'items.product'])->find($hireId);
+        $hire = Hire::with(['staff', 'items.product', 'items.invoiceItem'])->find($hireId);
         if (!$hire) {
             return response()->json(['message' => 'Hire not found'], 404);
         }
 
-        // Guard: the hire must have at least one item to bill.
-        if ($hire->items->isEmpty()) {
-            return response()->json(['message' => 'Cannot generate invoice: this hire has no items.'], 422);
+        // Only returned items that have not already been billed are candidates.
+        $candidates = $hire->items->filter(fn($item) => $item->is_returned && !$item->invoiceItem);
+
+        // Optionally bill an explicit subset of those candidates.
+        $requestedIds = $request->input('item_ids');
+        if (is_array($requestedIds) && count($requestedIds)) {
+            $candidates = $candidates->whereIn('id', $requestedIds);
         }
 
-        // Guard: every item must have a hire rate, otherwise it would silently bill as 0.
-        $unrated = $hire->items->filter(fn($item) => !($item->hire_rate_per_day > 0));
+        if ($candidates->isEmpty()) {
+            return response()->json([
+                'message' => 'Nothing to invoice: there are no returned, un-invoiced items on this hire.',
+            ], 422);
+        }
+
+        // Guard: every billed item must have a hire rate, else it would bill as 0.
+        $unrated = $candidates->filter(fn($item) => !($item->hire_rate_per_day > 0));
         if ($unrated->isNotEmpty()) {
             $names = $unrated->map(function ($item) {
                 $name = $item->product->prod_name ?? ('Product #' . $item->product_id);
-                $tag  = $item->product->prod_tag ?? null;
+                $tag  = $item->product->prod_tag_number ?? null;
                 return $tag ? "{$name} ({$tag})" : $name;
             })->values()->all();
 
             return response()->json([
-                'message'        => 'Cannot generate invoice: the following items have no hire rate set: ' . implode(', ', $names) . '.',
-                'unrated_items'  => $names,
+                'message'       => 'Cannot generate invoice: the following items have no hire rate set: ' . implode(', ', $names) . '.',
+                'unrated_items' => $names,
             ], 422);
         }
 
-        // Duplicate handling: replace existing invoice(s) only on explicit confirmation.
-        $existing = Invoice::where('hire_id', $hire->id)->get();
-        if ($existing->isNotEmpty() && !$request->boolean('replace')) {
-            return response()->json([
-                'message'               => 'An invoice already exists for this hire. Generating a new one will replace it.',
-                'requires_confirmation' => true,
-            ], 409);
-        }
+        // Build one line per item, billed to its ACTUAL return date.
+        // Compare whole calendar days (Carbon returns a float otherwise).
+        $hireStart = Carbon::parse($hire->hire_date)->startOfDay();
+        $lines = $candidates->map(function ($item) use ($hire, $hireStart) {
+            $end  = ($item->returned_at ? Carbon::parse($item->returned_at) : Carbon::parse($hire->hire_return_date))->startOfDay();
+            $days = max(1, (int) $hireStart->diffInDays($end));
+            return [
+                'item'     => $item,
+                'name'     => $item->product->prod_name ?? ('Product #' . $item->product_id),
+                'tag'      => $item->product->prod_tag_number ?? '—',
+                'qty'      => $item->quantity,
+                'days'     => $days,
+                'rate'     => (float) $item->hire_rate_per_day,
+                'subtotal' => (float) $item->hire_rate_per_day * $item->quantity * $days,
+                'returned' => $item->returned_at,
+            ];
+        })->values();
+
+        $total = $lines->sum('subtotal');
 
         $invoiceNumber = 'INV-' . str_pad($hire->id, 4, '0', STR_PAD_LEFT) . '-' . now()->format('YmdHis');
-        $total         = $this->calcTotal($hire);
+        $relativePath  = 'invoices/' . $invoiceNumber . '.pdf';
 
         $pdf = Pdf::loadView('invoices.hire-invoice', [
             'hire'          => $hire,
             'invoiceNumber' => $invoiceNumber,
             'generatedAt'   => now()->format('d M Y, H:i'),
             'total'         => $total,
+            'lines'         => $lines,
+            'partial'       => $candidates->count() < $hire->items->count(),
         ])->setPaper('a4', 'portrait');
 
-        $relativePath = 'invoices/' . $invoiceNumber . '.pdf';
-
-        $invoice = DB::transaction(function () use ($existing, $hire, $invoiceNumber, $relativePath, $total, $pdf) {
-            // Remove superseded invoices (DB rows first; files after commit to avoid orphan rows).
-            foreach ($existing as $old) {
-                $old->delete();
-            }
-
+        $invoice = DB::transaction(function () use ($hire, $invoiceNumber, $relativePath, $total, $lines, $pdf) {
             Storage::disk('public')->put($relativePath, $pdf->output());
 
-            return Invoice::create([
+            $invoice = Invoice::create([
                 'hire_id'        => $hire->id,
                 'invoice_number' => $invoiceNumber,
                 'file_path'      => $relativePath,
                 'total_amount'   => $total,
             ]);
+
+            foreach ($lines as $line) {
+                InvoiceItem::create([
+                    'invoice_id'   => $invoice->id,
+                    'hire_item_id' => $line['item']->id,
+                    'days'         => $line['days'],
+                    'rate_per_day' => $line['rate'],
+                    'subtotal'     => $line['subtotal'],
+                ]);
+            }
+
+            return $invoice;
         });
 
-        // Files of replaced invoices are cleaned up only once the new row is committed.
-        foreach ($existing as $old) {
-            if ($old->file_path) {
-                Storage::disk('public')->delete($old->file_path);
-            }
-        }
-
-        $action = $existing->isNotEmpty() ? 'regenerated' : 'generated';
         AuditLogger::log(
             'invoice',
-            $action,
-            "Invoice {$invoiceNumber} {$action} for hire #{$hire->id}",
+            'generated',
+            "Invoice {$invoiceNumber} generated for hire #{$hire->id} ({$lines->count()} item(s))",
             $invoice->id,
             null,
             $this->format($invoice->load('hire.staff'))
         );
 
         return response()->json([
-            'message' => $existing->isNotEmpty() ? 'Invoice regenerated successfully' : 'Invoice generated successfully',
+            'message' => 'Invoice generated successfully',
             'data'    => $this->format($invoice->load('hire.staff')),
         ], 201);
     }

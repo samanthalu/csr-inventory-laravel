@@ -93,6 +93,9 @@
     </div>
     <div class="invoice-meta">
       <div class="invoice-title">INVOICE</div>
+      @if($partial ?? false)
+        <div class="invoice-num" style="color:#b45309;font-weight:700;">PARTIAL — returned items only</div>
+      @endif
       <div class="invoice-num">{{ $invoiceNumber }}</div>
       <div class="invoice-date">Generated: {{ $generatedAt }}</div>
     </div>
@@ -139,6 +142,7 @@
           <th>#</th>
           <th>Product</th>
           <th>Tag</th>
+          <th>Returned</th>
           <th class="right">Qty</th>
           <th class="right">Days</th>
           <th class="right">Rate / Day</th>
@@ -146,26 +150,16 @@
         </tr>
       </thead>
       <tbody>
-        @foreach($hire->items as $i => $item)
-          @php
-            $days = max(1, \Carbon\Carbon::parse($hire->hire_date)
-                           ->diffInDays(\Carbon\Carbon::parse($hire->hire_return_date)));
-            $rate     = $item->hire_rate_per_day ?? 0;
-            $subtotal = $rate * $item->quantity * $days;
-          @endphp
+        @foreach($lines as $i => $line)
           <tr>
             <td class="muted">{{ $i + 1 }}</td>
-            <td>
-              {{ $item->product->prod_name ?? 'Product #'.$item->product_id }}
-              @if($item->is_returned)
-                <br><span class="returned-badge">✓ Returned</span>
-              @endif
-            </td>
-            <td class="muted">{{ $item->product->prod_tag_number ?? '—' }}</td>
-            <td class="right">{{ $item->quantity }}</td>
-            <td class="right">{{ $days }}</td>
-            <td class="right">{{ $rate > 0 ? 'MWK '.number_format($rate, 2) : '—' }}</td>
-            <td class="right">{{ $subtotal > 0 ? 'MWK '.number_format($subtotal, 2) : '—' }}</td>
+            <td>{{ $line['name'] }}</td>
+            <td class="muted">{{ $line['tag'] }}</td>
+            <td class="muted">{{ $line['returned'] ? \Carbon\Carbon::parse($line['returned'])->format('d M Y') : '—' }}</td>
+            <td class="right">{{ $line['qty'] }}</td>
+            <td class="right">{{ $line['days'] }}</td>
+            <td class="right">MWK {{ number_format($line['rate'], 2) }}</td>
+            <td class="right">MWK {{ number_format($line['subtotal'], 2) }}</td>
           </tr>
         @endforeach
       </tbody>
@@ -176,8 +170,8 @@
   <div class="totals-wrap">
     <table class="totals-box">
       <tr class="totals-row">
-        <td>Items</td>
-        <td class="right">{{ $hire->items->count() }}</td>
+        <td>Items billed</td>
+        <td class="right">{{ count($lines) }}{{ ($partial ?? false) ? ' of '.$hire->items->count() : '' }}</td>
       </tr>
       <tr class="totals-row grand">
         <td>Total</td>

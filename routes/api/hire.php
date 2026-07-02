@@ -13,6 +13,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/hires/{id}',         [HireController::class, 'update']);
     Route::patch('/hires/{id}/return',              [HireController::class, 'return']);
     Route::patch('/hires/{hireId}/items/{itemId}/return', [HireController::class, 'returnItem']);
+    Route::patch('/hires/{hireId}/items/{itemId}/unreturn', [HireController::class, 'unreturnItem']);
     Route::post('/hires/{id}/items',                       [HireController::class, 'addItems']);
     Route::delete('/hires/{hireId}/items/{itemId}',        [HireController::class, 'removeItem']);
     Route::delete('/hires/{id}',      [HireController::class, 'destroy']);
