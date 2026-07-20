@@ -208,7 +208,7 @@ class HireController extends Controller
         ]);
     }
 
-    public function returnItem($hireId, $itemId)
+    public function returnItem(Request $request, $hireId, $itemId)
     {
         if (!Gate::allows('manage-hire')) {
             return response()->json(['message' => 'Unauthorized'], 403);
@@ -218,7 +218,14 @@ class HireController extends Controller
             return response()->json(['message' => 'Item not found'], 404);
         }
 
-        $item->update(['is_returned' => true, 'returned_at' => now()]);
+        $validated  = $request->validate([
+            'returned_at' => 'nullable|date|before_or_equal:today',
+        ]);
+        $returnedAt = isset($validated['returned_at'])
+            ? Carbon::parse($validated['returned_at'])->startOfDay()
+            : now();
+
+        $item->update(['is_returned' => true, 'returned_at' => $returnedAt]);
 
         return response()->json(['message' => 'Item marked as returned']);
     }
@@ -333,7 +340,7 @@ class HireController extends Controller
         ]);
     }
 
-    public function return($id)
+    public function return(Request $request, $id)
     {
         if (!Gate::allows('manage-hire')) {
             return response()->json(['message' => 'Unauthorized'], 403);
@@ -343,8 +350,16 @@ class HireController extends Controller
             return response()->json(['message' => 'Hire not found'], 404);
         }
 
+        $validated  = $request->validate([
+            'returned_at' => 'nullable|date|before_or_equal:today',
+        ]);
+        $returnedAt = isset($validated['returned_at'])
+            ? Carbon::parse($validated['returned_at'])->startOfDay()
+            : now();
+
         $hire->update(['hire_status' => 'returned']);
-        $hire->items()->whereNull('returned_at')->update(['returned_at' => now()]);
+        // Only stamp items that aren't already returned; keep their real return dates intact.
+        $hire->items()->whereNull('returned_at')->update(['returned_at' => $returnedAt]);
         $hire->items()->update(['is_returned' => true]);
 
         AuditLogger::log('hire', 'returned', "Hire #{$id} marked as returned", (int) $id);

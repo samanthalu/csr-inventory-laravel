@@ -19,6 +19,8 @@ class ProductSelectResource extends JsonResource
             'prod_name'         => $this->prod_name,
             'prod_tag'          => $this->prod_tag_number,
             'prod_serial_num'   => $this->prod_serial_num,
+            'cat_id'            => $this->cat_id,
+            'cat_name'          => $this->whenLoaded('category', fn() => $this->category?->cat_name),
         ];
     }
 }

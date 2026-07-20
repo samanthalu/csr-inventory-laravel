@@ -368,7 +368,9 @@ class ProductController extends Controller
     }
 
     public function getSelectProducts(Request $request) {
-        return ProductSelectResource::collection(Product::all());
+        return ProductSelectResource::collection(
+            Product::with('category:cat_id,cat_name')->get()
+        );
     }
 
     public function trash()
