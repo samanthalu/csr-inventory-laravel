@@ -36,7 +36,7 @@ class InvoiceController extends Controller
         if (!Gate::allows('manage-invoices')) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
-        $hire = Hire::with(['staff', 'items.product', 'items.invoiceItem'])->find($hireId);
+        $hire = Hire::with(['staff', 'items.product.category', 'items.invoiceItem'])->find($hireId);
         if (!$hire) {
             return response()->json(['message' => 'Hire not found'], 404);
         }
@@ -81,6 +81,7 @@ class InvoiceController extends Controller
                 'item'     => $item,
                 'name'     => $item->product->prod_name ?? ('Product #' . $item->product_id),
                 'tag'      => $item->product->prod_tag_number ?? '—',
+                'category' => $item->product->category->cat_name ?? null,
                 'qty'      => $item->quantity,
                 'days'     => $days,
                 'rate'     => (float) $item->hire_rate_per_day,

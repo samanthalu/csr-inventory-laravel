@@ -119,7 +119,14 @@
       </td>
       <td>
         <div class="section-label">Hire Details</div>
-        <div class="detail-line"><strong>Hire #:</strong> {{ $hire->id }}</div>
+        @php
+          $itemsSummary = collect($lines)
+            ->groupBy(fn($l) => $l['category'] ?: 'Uncategorised')
+            ->map(fn($group) => $group->sum('qty'))
+            ->map(fn($qty, $cat) => $cat.' &times;'.$qty)
+            ->implode(', ');
+        @endphp
+        <div class="detail-line"><strong>Items:</strong> {!! $itemsSummary !!}</div>
         <div class="detail-line"><strong>Status:</strong>
           <span class="status-badge status-{{ $hire->hire_status ?? 'active' }}">
             {{ ucfirst($hire->hire_status ?? 'active') }}
@@ -129,7 +136,6 @@
           <div class="detail-line"><strong>Purpose:</strong> {{ $hire->hire_purpose }}</div>
         @endif
         <div class="detail-line"><strong>Hire Date:</strong> {{ \Carbon\Carbon::parse($hire->hire_date)->format('d M Y') }}</div>
-        <div class="detail-line"><strong>Return By:</strong> {{ \Carbon\Carbon::parse($hire->hire_return_date)->format('d M Y') }}</div>
       </td>
     </tr>
   </table>
