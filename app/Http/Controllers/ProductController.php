@@ -40,9 +40,11 @@ class ProductController extends Controller
         try {
             $this->authorize('viewAny', Product::class);
 
-            // Shared search scope so the listing and the tab counts stay in sync.
-            $search = trim((string) $request->query('search', ''));
-            $applySearch = function ($q) use ($search) {
+            // Shared search/filter scope so the listing and the tab counts stay in sync.
+            $search    = trim((string) $request->query('search', ''));
+            $status    = strtolower(trim((string) $request->query('status', '')));
+            $condition = strtolower(trim((string) $request->query('condition', '')));
+            $applySearch = function ($q) use ($search, $status, $condition) {
                 if ($search !== '') {
                     $q->where(function ($w) use ($search) {
                         $w->where('prod_name', 'like', "%{$search}%")
@@ -50,6 +52,19 @@ class ProductController extends Controller
                           ->orWhere('prod_model_number', 'like', "%{$search}%")
                           ->orWhere('prod_tag_number', 'like', "%{$search}%");
                     });
+                }
+                // Stored values vary in case ("Used" / "used"), so compare lower-cased.
+                if ($status === 'hired out') {
+                    // Matches how the list displays it: on an active hire, or flagged hired out.
+                    $q->where(fn($w) => $w->whereRaw('LOWER(prod_current_status) = ?', [$status])->orWhereHas('activeHireItems'));
+                } elseif ($status === 'available') {
+                    // An asset on an active hire displays as hired out, so it isn't available.
+                    $q->whereRaw('LOWER(prod_current_status) = ?', [$status])->whereDoesntHave('activeHireItems');
+                } elseif ($status !== '') {
+                    $q->whereRaw('LOWER(prod_current_status) = ?', [$status]);
+                }
+                if ($condition !== '') {
+                    $q->whereRaw('LOWER(prod_condition) = ?', [$condition]);
                 }
             };
 

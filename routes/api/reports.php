@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Route;
 Route::middleware(['auth:sanctum'])->prefix('reports')->group(function () {
     // Main dashboard overview — any authenticated user
     Route::get('/summary', [ReportController::class, 'summary']);
+    Route::get('/dashboard', [ReportController::class, 'dashboard']);
     // Products dashboard asset stats — products viewers or reports viewers
     Route::get('/assets', [ReportController::class, 'assets'])
         ->middleware('permission:view_products|view_reports');

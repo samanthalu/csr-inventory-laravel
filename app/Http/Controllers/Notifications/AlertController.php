@@ -64,7 +64,7 @@ class AlertController extends Controller
         foreach ($overdueHires as $h) {
             $key  = "overdue_hire_{$h->id}";
             if (isset($dismissed[$key])) continue;
-            $days = (int) now()->startOfDay()->diffInDays(\Carbon\Carbon::parse($h->due_date)->startOfDay());
+            $days = (int) \Carbon\Carbon::parse($h->due_date)->startOfDay()->diffInDays(now()->startOfDay());
             $alerts[] = ['key' => $key, 'type' => 'overdue_hire', 'severity' => 'critical', 'title' => 'Overdue Hire', 'message' => "{$h->staff_name}'s hire is {$days} day(s) overdue", 'link' => "/hire/{$h->id}/details", 'date' => $h->due_date];
         }
 
@@ -79,7 +79,7 @@ class AlertController extends Controller
         foreach ($overdueMainenance as $m) {
             $key  = "overdue_maintenance_{$m->id}";
             if (isset($dismissed[$key])) continue;
-            $days = (int) now()->startOfDay()->diffInDays(\Carbon\Carbon::parse($m->due_date)->startOfDay());
+            $days = (int) \Carbon\Carbon::parse($m->due_date)->startOfDay()->diffInDays(now()->startOfDay());
             $alerts[] = ['key' => $key, 'type' => 'overdue_maintenance', 'severity' => 'warning', 'title' => 'Overdue Maintenance', 'message' => "{$m->prod_name} ({$m->prod_tag_number}) is {$days} day(s) overdue from service", 'link' => "/maintenance/{$m->id}/details", 'date' => $m->due_date];
         }
 

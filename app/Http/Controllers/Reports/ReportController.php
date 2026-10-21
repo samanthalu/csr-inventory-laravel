@@ -61,6 +61,110 @@ class ReportController extends Controller
         ]);
     }
 
+    /**
+     * Main dashboard: 12-month trends, availability by category, what's due back,
+     * live field sessions and (for admins) recent activity. Any authenticated user.
+     */
+    public function dashboard(Request $request)
+    {
+        $start  = now()->startOfMonth()->subMonths(11);
+        $months = collect(range(0, 11))->map(fn($i) => $start->copy()->addMonths($i)->format('Y-m'));
+
+        $monthly = function ($table, $dateCol, $agg = 'count(*)') use ($start) {
+            return DB::table($table)
+                ->where($dateCol, '>=', $start->toDateString())
+                ->selectRaw("DATE_FORMAT($dateCol, '%Y-%m') as ym, $agg as v")
+                ->groupBy('ym')
+                ->pluck('v', 'ym');
+        };
+        $series = fn($rows) => $months->map(fn($m) => (float) ($rows[$m] ?? 0))->values();
+
+        $hires       = $monthly('hires', 'hire_date');
+        $added       = DB::table('products')->whereNull('deleted_at')
+            ->where('created_at', '>=', $start)
+            ->selectRaw("DATE_FORMAT(created_at, '%Y-%m') as ym, count(*) as v")
+            ->groupBy('ym')->pluck('v', 'ym');
+        $maintCost   = $monthly('maintenance_logs', 'ml_sent_date', 'sum(ml_cost)');
+        $invoiced    = $monthly('invoices', 'created_at', 'sum(total_amount)');
+
+        // Availability per category (top 8 by size). Status values vary in case in the data.
+        $byCategory = DB::table('products')
+            ->whereNull('products.deleted_at')
+            ->join('category', 'products.cat_id', '=', 'category.cat_id')
+            ->selectRaw("category.cat_name as category,
+                sum(lower(prod_current_status) = 'available') as available,
+                sum(lower(prod_current_status) = 'hired out') as hired_out,
+                sum(lower(prod_current_status) = 'maintenance') as maintenance,
+                count(*) as total")
+            ->groupBy('category.cat_name')
+            ->orderByDesc('total')
+            ->limit(8)
+            ->get()
+            ->map(fn($r) => [
+                'category'    => $r->category,
+                'available'   => (int) $r->available,
+                'hired_out'   => (int) $r->hired_out,
+                'maintenance' => (int) $r->maintenance,
+                'other'       => (int) $r->total - (int) $r->available - (int) $r->hired_out - (int) $r->maintenance,
+            ]);
+
+        $today = now()->toDateString();
+        $dueBack = DB::table('hires')
+            ->join('staff', 'hires.staff_id', '=', 'staff.staff_id')
+            ->where('hires.hire_status', 'active')
+            ->whereNotNull('hires.hire_return_date')
+            ->where('hires.hire_return_date', '<=', now()->addDays(14)->toDateString())
+            ->selectRaw("hires.id, hires.hire_purpose as purpose, hires.hire_return_date as due_date,
+                CONCAT(staff.staff_first_name, ' ', staff.staff_last_name) as staff_name,
+                (select count(*) from hire_items hi where hi.hire_id = hires.id and hi.is_returned = 0) as items_out")
+            ->orderBy('hires.hire_return_date')
+            ->limit(8)
+            ->get()
+            ->map(fn($h) => [
+                'id'         => $h->id,
+                'staff_name' => $h->staff_name,
+                'purpose'    => $h->purpose,
+                'due_date'   => $h->due_date,
+                'items_out'  => (int) $h->items_out,
+                'overdue'    => $h->due_date < $today,
+            ]);
+
+        $fieldwork = DB::table('field_work_sessions')
+            ->where('fw_status', 'active')
+            ->selectRaw('id, fw_title as title, fw_location as location, fw_start_date as start_date, fw_end_date as end_date,
+                (select count(*) from research_assistants ra where ra.ra_fw_session_id = field_work_sessions.id) as ras,
+                (select count(*) from ra_asset_assignments a
+                   join research_assistants ra on ra.id = a.raa_ra_id
+                  where ra.ra_fw_session_id = field_work_sessions.id and a.raa_date_returned is null) as unreturned')
+            ->orderByRaw('fw_end_date is null, fw_end_date')
+            ->limit(5)
+            ->get();
+
+        $user    = $request->user();
+        $isAdmin = $user && ($user->hasRole('super-admin') || $user->user_type === 'admin');
+        $activity = $isAdmin
+            ? DB::table('audit_logs')->orderByDesc('created_at')->limit(8)
+                ->get(['id', 'user_name', 'module', 'action', 'description', 'created_at'])
+            : null;
+
+        return response()->json([
+            'data' => [
+                'months' => $months,
+                'trend'  => [
+                    'hires'            => $series($hires),
+                    'assets_added'     => $series($added),
+                    'maintenance_cost' => $series($maintCost),
+                    'invoiced'         => $series($invoiced),
+                ],
+                'by_category'      => $byCategory,
+                'due_back'         => $dueBack,
+                'fieldwork'        => $fieldwork,
+                'pending_requests' => DB::table('hire_requests')->where('status', 'pending')->count(),
+                'activity'         => $activity,
+            ],
+        ]);
+    }
+
     public function assets()
     {
         $byStatus = DB::table('products')
@@ -86,11 +190,12 @@ class ReportController extends Controller
         $byCategory = DB::table('products')
             ->whereNull('deleted_at')
             ->join('category', 'products.cat_id', '=', 'category.cat_id')
-            ->select('category.cat_name as category', DB::raw('count(*) as count'), DB::raw('sum(prod_cost) as total_value'))
-            ->groupBy('category.cat_name')
+            ->select('category.cat_id', 'category.cat_name as category', DB::raw('count(*) as count'), DB::raw('sum(prod_cost) as total_value'))
+            ->groupBy('category.cat_id', 'category.cat_name')
             ->orderByDesc('count')
             ->get()
             ->map(fn($r) => [
+                'cat_id'      => (int) $r->cat_id,
                 'category'    => $r->category,
                 'count'       => (int) $r->count,
                 'total_value' => (float) $r->total_value,
@@ -98,7 +203,7 @@ class ReportController extends Controller
 
         $recentlyAdded = DB::table('products')
             ->whereNull('deleted_at')
-            ->select('prod_name', 'prod_tag_number', 'prod_cost', 'prod_current_status', 'created_at')
+            ->select('prod_id', 'prod_name', 'prod_tag_number', 'prod_cost', 'prod_current_status', 'created_at')
             ->orderByDesc('created_at')
             ->limit(10)
             ->get();
