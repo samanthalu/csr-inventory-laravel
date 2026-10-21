@@ -180,6 +180,95 @@ class HireController extends Controller
         }
     }
 
+    /**
+     * Resolve a list of asset tag numbers (typically from an uploaded CSV) into
+     * products, so a hire can be bulk-populated instead of picked one by one.
+     * Tags are matched case-insensitively and trimmed on both sides.
+     */
+    public function resolveAssets(Request $request)
+    {
+        if (!Gate::allows('manage-hire')) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        $validated = $request->validate([
+            'tags'   => 'required|array|min:1|max:1000',
+            'tags.*' => 'nullable|string|max:255',
+        ]);
+
+        // Normalise: trim, drop blanks, keep first-seen spelling, record repeats.
+        $seen = [];          // lowercase key => tag as supplied
+        $duplicates = [];    // tags that appeared more than once in the file
+        foreach ($validated['tags'] as $raw) {
+            $tag = trim((string) $raw);
+            if ($tag === '') {
+                continue;
+            }
+            $key = mb_strtolower($tag);
+            if (isset($seen[$key])) {
+                $duplicates[$key] = $seen[$key];
+                continue;
+            }
+            $seen[$key] = $tag;
+        }
+
+        if (empty($seen)) {
+            return response()->json(['message' => 'No asset tags found in the file'], 422);
+        }
+
+        $products = Product::with('category:cat_id,cat_name')
+            ->whereIn(DB::raw('LOWER(TRIM(prod_tag_number))'), array_keys($seen))
+            ->get()
+            ->groupBy(fn($p) => mb_strtolower(trim((string) $p->prod_tag_number)));
+
+        // Assets still out on a hire that hasn't been closed off.
+        $onHire = HireItem::whereIn('product_id', $products->flatten()->pluck('prod_id'))
+            ->where('is_returned', false)
+            ->whereHas('hire', fn($q) => $q->where('hire_status', '!=', 'returned'))
+            ->pluck('hire_id', 'product_id');
+
+        $matched = $unmatched = $unavailable = $ambiguous = [];
+
+        foreach ($seen as $key => $tag) {
+            $found = $products->get($key);
+
+            if (!$found || $found->isEmpty()) {
+                $unmatched[] = $tag;
+                continue;
+            }
+            if ($found->count() > 1) {
+                $ambiguous[] = ['tag' => $tag, 'count' => $found->count()];
+                continue;
+            }
+
+            $product = $found->first();
+            $entry = [
+                'tag'       => $tag,
+                'prod_id'   => $product->prod_id,
+                'prod_name' => $product->prod_name,
+                'prod_tag'  => $product->prod_tag_number,
+                'cat_id'    => $product->cat_id,
+                'cat_name'  => $product->category?->cat_name ?? "Category #{$product->cat_id}",
+            ];
+
+            if ($onHire->has($product->prod_id)) {
+                $entry['hire_id'] = $onHire[$product->prod_id];
+                $unavailable[] = $entry;
+                continue;
+            }
+
+            $matched[] = $entry;
+        }
+
+        return response()->json([
+            'matched'     => $matched,
+            'unmatched'   => $unmatched,
+            'unavailable' => $unavailable,
+            'ambiguous'   => $ambiguous,
+            'duplicates'  => array_values($duplicates),
+        ]);
+    }
+
     public function update(Request $request, $id)
     {
         if (!Gate::allows('manage-hire')) {

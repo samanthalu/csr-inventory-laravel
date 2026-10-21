@@ -4,6 +4,7 @@ namespace App\Http\Controllers\FieldWork;
 
 use App\Http\Controllers\Controller;
 use App\Models\FieldWorkSession;
+use App\Models\Hire;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use App\Services\AuditLogger;
@@ -47,6 +48,37 @@ class FieldWorkSessionController extends Controller
         AuditLogger::log('fieldwork', 'created', "Field work session '{$session->fw_title}' created", $session->id, null, ['title' => $session->fw_title, 'location' => $session->fw_location, 'start_date' => $session->fw_start_date]);
 
         return response()->json(['data' => $this->format($session->fresh(['createdBy', 'hire']))], 201);
+    }
+
+    /**
+     * Hires a session can be linked to: anything still out (overdue included),
+     * plus the session's current hire so an edit form never loses its value.
+     */
+    public function hireOptions(Request $request)
+    {
+        if (!Gate::allows('view_fieldwork')) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        $current = $request->integer('include');
+
+        $hires = Hire::with('staff:staff_id,staff_first_name,staff_last_name')
+            ->withCount(['items', 'items as out_count' => fn($q) => $q->where('is_returned', false)])
+            ->where(fn($q) => $q->where('hire_status', '!=', 'returned')
+                ->when($current, fn($q) => $q->orWhere('id', $current)))
+            ->orderByDesc('hire_date')
+            ->get()
+            ->map(fn(Hire $h) => [
+                'id'               => $h->id,
+                'hire_purpose'     => $h->hire_purpose,
+                'hire_date'        => $h->hire_date?->toDateString(),
+                'hire_return_date' => $h->hire_return_date?->toDateString(),
+                'staff_name'       => trim(($h->staff?->staff_first_name ?? '') . ' ' . ($h->staff?->staff_last_name ?? '')),
+                'items_count'      => $h->items_count,
+                'out_count'        => $h->out_count,
+            ]);
+
+        return response()->json(['data' => $hires]);
     }
 
     public function show($id)

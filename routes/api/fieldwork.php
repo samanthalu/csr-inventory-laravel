@@ -9,6 +9,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Sessions
     Route::get('/fieldwork',            [FieldWorkSessionController::class, 'index']);
     Route::post('/fieldwork',           [FieldWorkSessionController::class, 'store']);
+    Route::get('/fieldwork/hire-options', [FieldWorkSessionController::class, 'hireOptions']);
     Route::get('/fieldwork/{id}',       [FieldWorkSessionController::class, 'show']);
     Route::put('/fieldwork/{id}',       [FieldWorkSessionController::class, 'update']);
     Route::delete('/fieldwork/{id}',    [FieldWorkSessionController::class, 'destroy']);
@@ -21,7 +22,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/fieldwork/{sessionId}/assistants/{id}',       [ResearchAssistantController::class, 'destroy']);
 
     // Asset assignments (scoped to session)
+    Route::get('/fieldwork/{sessionId}/hire-assets',              [RaAssetAssignmentController::class, 'hireAssets']);
     Route::post('/fieldwork/{sessionId}/assignments',             [RaAssetAssignmentController::class, 'store']);
+    Route::post('/fieldwork/{sessionId}/assignments/bulk',        [RaAssetAssignmentController::class, 'bulkStore']);
     Route::patch('/fieldwork/{sessionId}/assignments/{id}/return',[RaAssetAssignmentController::class, 'return']);
     Route::delete('/fieldwork/{sessionId}/assignments/{id}',      [RaAssetAssignmentController::class, 'destroy']);
 });

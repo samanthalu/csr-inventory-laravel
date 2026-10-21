@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Route;
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/hires',              [HireController::class, 'index']);
     Route::post('/hires',             [HireController::class, 'store']);
+    Route::post('/hires/resolve-assets', [HireController::class, 'resolveAssets']);
     Route::get('/hires/{id}',         [HireController::class, 'show']);
     Route::put('/hires/{id}',         [HireController::class, 'update']);
     Route::patch('/hires/{id}/return',              [HireController::class, 'return']);

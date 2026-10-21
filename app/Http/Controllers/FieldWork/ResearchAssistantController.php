@@ -6,12 +6,15 @@ use App\Http\Controllers\Controller;
 use App\Models\ResearchAssistant;
 use App\Models\FieldWorkSession;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use App\Services\AuditLogger;
+use App\Services\RaAssetAssigner;
 
 class ResearchAssistantController extends Controller
 {
-    public function store(Request $request, $sessionId)
+    /** Add an RA, optionally handing them assets in the same step (all or nothing). */
+    public function store(Request $request, $sessionId, RaAssetAssigner $assigner)
     {
         if (!Gate::allows('create_fieldwork')) {
             return response()->json(['message' => 'Unauthorized'], 403);
@@ -28,12 +31,30 @@ class ResearchAssistantController extends Controller
             'ra_notes'     => 'nullable|string',
         ]);
 
+        $assets = $request->validate([
+            'assets'                     => 'nullable|array',
+            'assets.product_ids'         => 'required_with:assets|array|max:20',
+            'assets.product_ids.*'       => 'integer|distinct',
+            'assets.raa_date_out'        => 'required_with:assets|date',
+            'assets.raa_expected_return' => 'nullable|date|after_or_equal:assets.raa_date_out',
+            'assets.raa_condition_out'   => 'required_with:assets|in:good,fair,poor',
+        ])['assets'] ?? null;
+        $productIds = $assets['product_ids'] ?? [];
+
+        if ($productIds && ($error = $assigner->productError($session, $productIds))) {
+            return response()->json(['message' => $error], 422);
+        }
+
         $data['ra_fw_session_id'] = $session->id;
-        $ra = ResearchAssistant::create($data);
+        [$ra, $assignments] = DB::transaction(function () use ($data, $session, $assets, $productIds, $assigner) {
+            $ra = ResearchAssistant::create($data);
+            $pairs = array_map(fn($id) => ['raa_ra_id' => $ra->id, 'raa_product_id' => $id], $productIds);
+            return [$ra, $pairs ? $assigner->assign($session->id, $pairs, $assets) : collect()];
+        });
 
-        AuditLogger::log('fieldwork', 'ra_added', "Research assistant '{$ra->ra_name}' added to session #{$session->id}", $ra->id, null, ['session_id' => $session->id, 'name' => $ra->ra_name]);
+        AuditLogger::log('fieldwork', 'ra_added', "Research assistant '{$ra->ra_name}' added to session #{$session->id}", $ra->id, null, ['session_id' => $session->id, 'name' => $ra->ra_name, 'product_ids' => $productIds]);
 
-        return response()->json(['data' => $ra], 201);
+        return response()->json(['data' => [...$ra->toArray(), 'assignments' => $assignments]], 201);
     }
 
     public function bulkStore(Request $request, $sessionId)
