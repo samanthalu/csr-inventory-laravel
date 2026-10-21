@@ -249,9 +249,17 @@ class ReportController extends Controller
 
         $totalHireItems = (int) DB::table('hire_items')->sum('quantity');
 
+        // Active hires past their return date (overdue is derived, not stored).
+        $overdue = DB::table('hires')
+            ->where('hire_status', 'active')
+            ->whereNotNull('hire_return_date')
+            ->where('hire_return_date', '<', now()->toDateString())
+            ->count();
+
         return response()->json([
             'data' => [
                 'by_status'     => $byStatus,
+                'overdue'       => $overdue,
                 'top_products'  => $topProducts,
                 'recent_hires'  => $recentHires,
                 'total_hire_items' => $totalHireItems,
@@ -274,6 +282,7 @@ class ReportController extends Controller
         $topCostItems = DB::table('maintenance_logs')
             ->join('products', 'maintenance_logs.product_id', '=', 'products.prod_id')
             ->select(
+                'maintenance_logs.id',
                 'products.prod_name',
                 'products.prod_tag_number',
                 'maintenance_logs.ml_reason',
